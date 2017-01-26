@@ -1,0 +1,97 @@
+<form class="form-horizontal">
+
+    <h4>General</h4>
+    <div class="control-group">
+        <label class="control-label">Switching Method</label>
+        <div class="controls">
+            <select data-bind="value: settings.plugins.psucontrol.switchingMethod">
+                <option value="">Select Method...</option>
+                <option value="COMMAND">Command</option>
+                <option value="GPIO">GPIO</option>
+            </select>
+        </div>
+    </div>
+    <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "GPIO" -->
+    <div class="control-group">
+        <label class="control-label">On/Off GPIO Pin</label>
+        <div class="controls">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onoffGPIOPin">
+        </div>
+    </div>
+    <!-- /ko -->
+        <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "COMMAND" -->
+    <div class="control-group">
+        <label class="control-label">PSU On Command</label>
+        <div class="controls">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onCommand">
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">PSU Off Command</label>
+        <div class="controls">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.offCommand">
+        </div>
+    </div>
+        <!-- /ko -->
+    <div class="control-group">
+        <label class="control-label">Sense GPIO Pin</label>
+        <div class="controls">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.senseGPIOPin">
+        </div>
+    </div>
+    <br />
+
+    <h4>Power On Options</h4>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOn"> Automatically turn PSU ON
+            </label>
+        </div>
+    </div>
+    <!-- ko if: settings.plugins.psucontrol.autoOn() -->
+    <div class="control-group">
+        <label class="control-label">Trigger Commands</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.autoOnCommands">
+        </div>
+    </div>
+    <!-- /ko -->
+    <br />
+
+    <h4>Power Off Options</h4>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.powerOffWhenIdle"> Automatically turn PSU OFF when idle
+            </label>
+        </div>
+    </div>
+    <!-- ko if: settings.plugins.psucontrol.powerOffWhenIdle() -->
+    <div class="control-group">
+        <label class="control-label">Idle Timeout</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" class="input-mini text-right" data-bind="value: settings.plugins.psucontrol.idleTimeout">
+                <span class="add-on">min</span>
+            </div>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Ignore Commands</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.idleIgnoreCommands">
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Wait For Temperature</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" class="input-mini text-right" data-bind="value: settings.plugins.psucontrol.idleTimeoutWaitTemp">
+                <span class="add-on">°C</span>
+            </div>
+        </div>
+    </div>
+    <!-- /ko -->
+
+</form>

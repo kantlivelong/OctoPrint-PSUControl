@@ -1,0 +1,23 @@
+<a id="navbar_plugin_psucontrol" class="nav" href="#" data-bind="enable: loginStateViewModel.isUser, click: function() { $root.togglePSU(); }" style="visibility: hidden">
+	<i id="powercontrol_psu_indicator" class="fa fa-bolt"></i>
+</a>
+
+
+<div id="psucontrol_poweroff_confirmation_dialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>PSU Control</h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Power Supply is currently ON. 
+        </p>
+        <p>
+            {{ _('Are you sure you want to proceed?') }}
+        </p>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
+        <a href="#" class="btn btn-danger" data-bind="click: function() { $root.turnPSUOff(); }">{{ _('Proceed') }}</a>
+    </div>
+</div>
