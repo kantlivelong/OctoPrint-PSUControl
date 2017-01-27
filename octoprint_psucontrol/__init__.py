@@ -21,6 +21,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def __init__(self):
         self.switchingMethod = ''
         self.onoffGPIOPin = 0
+        self.invertonoffGPIOPin = False
         self.onCommand = ''
         self.offCommand = ''
         self.autoOn = False
@@ -52,6 +53,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.onoffGPIOPin = self._settings.get_int(["onoffGPIOPin"])
         self._logger.debug("onoffGPIOPin: %s" % self.onoffGPIOPin)
+
+        self.invertonoffGPIOPin = self._settings.get_boolean(["invertonoffGPIOPin"])
+        self._logger.debug("invertonoffGPIOPin: %s" % self.invertonoffGPIOPin)
 
         self.onCommand = self._settings.get(["onCommand"])
         self._logger.debug("onCommand: %s" % self.onCommand)
@@ -216,7 +220,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._printer.commands(self.onCommand)
             elif self.switchingMethod == 'GPIO':
                 self._logger.debug("Switching PSU On Using GPIO: %s" % self.onoffGPIOPin)
-                GPIO.output(self.onoffGPIOPin, GPIO.HIGH)
+                if not self.invertonoffGPIOPin:
+                    GPIO.output(self.onoffGPIOPin, GPIO.HIGH)
+                else:
+                    GPIO.output(self.onoffGPIOPin, GPIO.LOW)
 
             time.sleep(0.1)
             self.check_psu_state()
@@ -229,7 +236,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._printer.commands(self.offCommand)
             elif self.switchingMethod == 'GPIO':
                 self._logger.debug("Switching PSU Off Using GPIO: %s" % self.onoffGPIOPin)
-                GPIO.output(self.onoffGPIOPin, GPIO.LOW)
+                if not self.invertonoffGPIOPin:
+                    GPIO.output(self.onoffGPIOPin, GPIO.LOW)
+                else:
+                    GPIO.output(self.onoffGPIOPin, GPIO.HIGH)
 
             time.sleep(0.1)
             self.check_psu_state()
@@ -253,6 +263,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         return dict(
             switchingMethod = '',
             onoffGPIOPin = 0,
+            invertonoffGPIOPin = False,
             onCommand = 'M80', 
             offCommand = 'M81', 
             senseGPIOPin = 0,
@@ -273,6 +284,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         
         self.switchingMethod = self._settings.get(["switchingMethod"])
         self.onoffGPIOPin = self._settings.get_int(["onoffGPIOPin"])
+        self.invertonoffGPIOPin = self._settings.get_boolean(["invertonoffGPIOPin"])
         self.onCommand = self._settings.get(["onCommand"])
         self.offCommand = self._settings.get(["offCommand"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
