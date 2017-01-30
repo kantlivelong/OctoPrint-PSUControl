@@ -1,2 +1,2 @@
 OctoPrint
-RPi.GPIO
+RPi.GPIO>=0.6.3
