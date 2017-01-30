@@ -32,8 +32,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleIgnoreCommands = ''
         self.idleIgnoreCommandsArray = []
         self.idleTimeoutWaitTemp = 0
+        self.enableSensing = False
         self.senseGPIOPin = 0
         self.isPSUOn = False
+        self._noSensingIsPSUOn = False
         self._checkPSUTimer = None
         self._idleTimer = None
         self._waitForHeaters = False
@@ -63,6 +65,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.offCommand = self._settings.get(["offCommand"])
         self._logger.debug("offCommand: %s" % self.offCommand)
 
+        self.enableSensing = self._settings.get_boolean(["enableSensing"])
+        self._logger.debug("enableSensing: %s" % self.enableSensing)
+
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self._logger.debug("senseGPIOPin: %s" % self.senseGPIOPin)
 
@@ -86,12 +91,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         self._logger.debug("idleTimeoutWaitTemp: %s" % self.idleTimeoutWaitTemp)
 
-        try:
-            GPIO.setup(self.senseGPIOPin, GPIO.IN)
-        except ValueError:
-            self._logger.error("senseGPIOPin %s is invalid!" % self.senseGPIOPin)
-            self.senseGPIOPin = 0
-
+        if self.enableSensing:
+            self._logger.info("Using sensing to determine PSU on/off state.")
+            try:
+                GPIO.setup(self.senseGPIOPin, GPIO.IN)
+            except ValueError:
+                self._logger.error("senseGPIOPin %s is invalid!" % self.senseGPIOPin)
+                self.senseGPIOPin = 0
+        
         if self.switchingMethod == 'COMMAND':
             self._logger.info("Using Commands for On/Off")
         elif self.switchingMethod == 'GPIO':
@@ -103,6 +110,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self.onoffGPIOPin = 0               
         else:
             self.switchingMethod = ''
+
         
         self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
         self._checkPSUTimer.start()
@@ -112,16 +120,17 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def check_psu_state(self):
 	old_isPSUOn = self.isPSUOn
 
-        self._logger.debug("Polling PSU state...")
+        if self.enableSensing:
+            self._logger.debug("Polling PSU state...")
+            r = GPIO.input(self.senseGPIOPin)
+            self._logger.debug("Result: %s" % r)
 
-        r = GPIO.input(self.senseGPIOPin)
-
-        self._logger.debug("Result: %s" % r)
-
-        if r==1:
-            self.isPSUOn = True
-        elif r==0:
-            self.isPSUOn = False
+            if r==1:
+                self.isPSUOn = True
+            elif r==0:
+                self.isPSUOn = False
+        else:
+            self.isPSUOn = self._noSensingIsPSUOn
         
         self._logger.debug("isPSUOn: %s" % self.isPSUOn)
 
@@ -225,6 +234,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 else:
                     GPIO.output(self.onoffGPIOPin, GPIO.LOW)
 
+            if not self.enableSensing:
+                self._noSensingIsPSUOn = True
+         
             time.sleep(0.1)
             self.check_psu_state()
         
@@ -241,6 +253,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 else:
                     GPIO.output(self.onoffGPIOPin, GPIO.HIGH)
 
+            if not self.enableSensing:
+                self._noSensingIsPSUOn = False
+                        
             time.sleep(0.1)
             self.check_psu_state()
 
@@ -266,6 +281,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             invertonoffGPIOPin = False,
             onCommand = 'M80', 
             offCommand = 'M81', 
+            enableSensing = False,
             senseGPIOPin = 0,
             autoOn = False,
             autoOnCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
@@ -277,6 +293,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
     def on_settings_save(self, data):
         old_onoffGPIOPin = self.onoffGPIOPin
+        old_enableSensing = self.enableSensing
         old_senseGPIOPin = self.senseGPIOPin
         old_switchingMethod = self.switchingMethod
         
@@ -287,6 +304,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.invertonoffGPIOPin = self._settings.get_boolean(["invertonoffGPIOPin"])
         self.onCommand = self._settings.get(["onCommand"])
         self.offCommand = self._settings.get(["offCommand"])
+        self.enableSensing = self._settings.get_boolean(["enableSensing"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self.autoOnCommands = self._settings.get(["autoOnCommands"])
@@ -309,13 +327,23 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             except ValueError:
                 self._logger.error("onoffGPIOPin %s is invalid!" % self.onoffGPIOPin)
                 self.onoffGPIOPin = 0
-
-        if self.senseGPIOPin != old_senseGPIOPin:
-            self._logger.debug("senseGPIOPin changed from %s to %s. Reconfiguring GPIO" % (old_senseGPIOPin, self.senseGPIOPin))
+        
+        if not self.enableSensing or self.senseGPIOPin != old_senseGPIOPin:
             try:
                 GPIO.cleanup(old_senseGPIOPin)
-            except ValueError:
+            except:
                 pass
+
+            try:
+                GPIO.cleanup(self.senseGPIOPin)
+            except:
+                pass
+
+        if ((self.enableSensing and old_enableSensing != self.enableSensing) or self.senseGPIOPin != old_senseGPIOPin):
+            if self.enableSensing:
+                self._logger.debug("Sensing enabled. Configuring GPIO pin %s" % (self.senseGPIOPin))
+            else:
+                self._logger.debug("senseGPIOPin changed from %s to %s. Reconfiguring GPIO" % (old_senseGPIOPin, self.senseGPIOPin))
 
             try:
                 GPIO.setup(self.senseGPIOPin, GPIO.IN)

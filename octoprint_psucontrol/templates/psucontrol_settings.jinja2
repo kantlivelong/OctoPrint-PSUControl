@@ -1,6 +1,6 @@
 <form class="form-horizontal">
 
-    <h4>General</h4>
+    <h4>Switching</h4>
     <div class="control-group">
         <label class="control-label">Switching Method</label>
         <div class="controls">
@@ -33,12 +33,24 @@
         </div>
     </div>
         <!-- /ko -->
+    <br />
+
+    <h4>Sensing</h4>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.enableSensing"> Get PSU on/off state via GPIO
+            </label>
+        </div>
+    </div>
+    <!-- ko if: settings.plugins.psucontrol.enableSensing() -->
     <div class="control-group">
         <label class="control-label">Sense GPIO Pin</label>
         <div class="controls">
             <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.senseGPIOPin">
         </div>
     </div>
+    <!-- /ko -->
     <br />
 
     <h4>Power On Options</h4>
