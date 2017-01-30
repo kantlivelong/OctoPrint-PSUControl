@@ -35,7 +35,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.enableSensing = False
         self.senseGPIOPin = 0
         self.isPSUOn = False
-        self._noSensingIsPSUOn = False
+        self._noSensing_isPSUOn = False
         self._checkPSUTimer = None
         self._idleTimer = None
         self._waitForHeaters = False
@@ -130,7 +130,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             elif r==0:
                 self.isPSUOn = False
         else:
-            self.isPSUOn = self._noSensingIsPSUOn
+            self.isPSUOn = self._noSensing_isPSUOn
         
         self._logger.debug("isPSUOn: %s" % self.isPSUOn)
 
@@ -235,7 +235,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     GPIO.output(self.onoffGPIOPin, GPIO.LOW)
 
             if not self.enableSensing:
-                self._noSensingIsPSUOn = True
+                self._noSensing_isPSUOn = True
          
             time.sleep(0.1)
             self.check_psu_state()
@@ -254,7 +254,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     GPIO.output(self.onoffGPIOPin, GPIO.HIGH)
 
             if not self.enableSensing:
-                self._noSensingIsPSUOn = False
+                self._noSensing_isPSUOn = False
                         
             time.sleep(0.1)
             self.check_psu_state()
