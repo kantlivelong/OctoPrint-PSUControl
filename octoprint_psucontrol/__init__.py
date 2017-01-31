@@ -95,11 +95,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if GPIO.VERSION < "0.6":
             self._logger.error("RPi.GPIO version 0.6.0 or greater required.")
         
-        GPIO.cleanup()
-
-        GPIO.setmode(GPIO.BOARD)
         GPIO.setwarnings(False)
-
+        GPIO.cleanup()
+        GPIO.setmode(GPIO.BOARD)
+        
         if self.enableSensing:
             self._logger.info("Using sensing to determine PSU on/off state.")
             self._logger.info("Configuring GPIO for pin %s" % self.senseGPIOPin)
