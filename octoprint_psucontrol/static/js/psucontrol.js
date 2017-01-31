@@ -43,13 +43,30 @@ $(function() {
         };
 
 	self.turnPSUOn = function() {
-            OctoPrint.postJson(OctoPrint.getSimpleApiUrl("psucontrol"), {"command": "turnPSUOn"});
+            $.ajax({
+                url: API_BASEURL + "plugin/psucontrol",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "turnPSUOn"
+                }),
+                contentType: "application/json; charset=UTF-8"
+            })
         };
 
 	self.turnPSUOff = function() {
-            OctoPrint.postJson(OctoPrint.getSimpleApiUrl("psucontrol"), {"command": "turnPSUOff"});
+            $.ajax({
+                url: API_BASEURL + "plugin/psucontrol",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "turnPSUOff"
+                }),
+                contentType: "application/json; charset=UTF-8"
+            })
+
             self.poweroff_dialog.modal("hide");
-        };
+        };   
     }
 
     ADDITIONAL_VIEWMODELS.push([
