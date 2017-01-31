@@ -42,14 +42,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._skipIdleTimer = False
 
     def initialize(self):
-        self._logger.info("Running RPi.GPIO version '{0}'".format(GPIO.VERSION))
-
-        if GPIO.VERSION < "0.6":       # Need at least 0.6 for edge detection
-            raise Exception("RPi.GPIO must be greater than 0.6")
-
-        GPIO.setmode(GPIO.BOARD)
-        GPIO.setwarnings(False)
-
         self.switchingMethod = self._settings.get(["switchingMethod"])
         self._logger.debug("switchingMethod: %s" % self.switchingMethod)
 
@@ -91,38 +83,51 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         self._logger.debug("idleTimeoutWaitTemp: %s" % self.idleTimeoutWaitTemp)
 
+        self._configure_gpio()
+
+        self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
+        self._checkPSUTimer.start()
+
+        self._start_idle_timer()
+
+    def _configure_gpio(self):
+        self._logger.info("Running RPi.GPIO version %s" % GPIO.VERSION)
+        if GPIO.VERSION < "0.6":
+            self._logger.error("RPi.GPIO version 0.6.0 or greater required.")
+        
+        GPIO.cleanup()
+
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setwarnings(False)
+
         if self.enableSensing:
             self._logger.info("Using sensing to determine PSU on/off state.")
+            self._logger.info("Configuring GPIO for pin %s" % self.senseGPIOPin)
             try:
                 GPIO.setup(self.senseGPIOPin, GPIO.IN)
-            except ValueError:
-                self._logger.error("senseGPIOPin %s is invalid!" % self.senseGPIOPin)
-                self.senseGPIOPin = 0
+            except (RuntimeError, ValueError) as e:
+                self._logger.error(e)
         
         if self.switchingMethod == 'COMMAND':
             self._logger.info("Using Commands for On/Off")
         elif self.switchingMethod == 'GPIO':
             self._logger.info("Using GPIO for On/Off")
+            self._logger.info("Configuring GPIO for pin %s" % self.onoffGPIOPin)
             try:
                 GPIO.setup(self.onoffGPIOPin, GPIO.OUT)
-            except ValueError:
-                self._logger.error("onoffGPIOPin %s is invalid!" % self.onoffGPIOPin)
-                self.onoffGPIOPin = 0               
-        else:
-            self.switchingMethod = ''
-
-        
-        self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
-        self._checkPSUTimer.start()
-
-        self._start_idle_timer()
+            except (RuntimeError, ValueError) as e:
+                self._logger.error(e)
 
     def check_psu_state(self):
 	old_isPSUOn = self.isPSUOn
 
         if self.enableSensing:
             self._logger.debug("Polling PSU state...")
-            r = GPIO.input(self.senseGPIOPin)
+            r = 0
+            try:
+                r = GPIO.input(self.senseGPIOPin)
+            except (RuntimeError, ValueError) as e:
+                self._logger.error(e)
             self._logger.debug("Result: %s" % r)
 
             if r==1:
@@ -230,9 +235,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             elif self.switchingMethod == 'GPIO':
                 self._logger.debug("Switching PSU On Using GPIO: %s" % self.onoffGPIOPin)
                 if not self.invertonoffGPIOPin:
-                    GPIO.output(self.onoffGPIOPin, GPIO.HIGH)
+                    pin_output=GPIO.HIGH
                 else:
-                    GPIO.output(self.onoffGPIOPin, GPIO.LOW)
+                    pin_output=GPIO.LOW
+
+                try:
+                    GPIO.output(self.onoffGPIOPin, pin_output)
+                except (RuntimeError, ValueError) as e:
+                    self._logger.error(e)
 
             if not self.enableSensing:
                 self._noSensing_isPSUOn = True
@@ -249,9 +259,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             elif self.switchingMethod == 'GPIO':
                 self._logger.debug("Switching PSU Off Using GPIO: %s" % self.onoffGPIOPin)
                 if not self.invertonoffGPIOPin:
-                    GPIO.output(self.onoffGPIOPin, GPIO.LOW)
+                    pin_output=GPIO.LOW
                 else:
-                    GPIO.output(self.onoffGPIOPin, GPIO.HIGH)
+                    pin_output=GPIO.HIGH
+
+                try:
+                    GPIO.output(self.onoffGPIOPin, pin_output)
+                except (RuntimeError, ValueError) as e:
+                    self._logger.error(e)
 
             if not self.enableSensing:
                 self._noSensing_isPSUOn = False
@@ -315,42 +330,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         
-        if (self.switchingMethod == 'GPIO' and ((old_switchingMethod != self.switchingMethod) or (old_onoffGPIOPin != self.onoffGPIOPin))):
-            self._logger.debug("onoffGPIOPin changed from %s to %s. Reconfiguring GPIO" % (old_onoffGPIOPin, self.onoffGPIOPin))
-            try:
-                GPIO.cleanup(old_onoffGPIOPin)
-            except ValueError:
-                pass
+        if (old_onoffGPIOPin != self.onoffGPIOPin or
+           old_senseGPIOPin != self.senseGPIOPin or
+           old_enableSensing != self.enableSensing or
+           old_switchingMethod != self.switchingMethod):
+            self._configure_gpio()
 
-            try:
-                GPIO.setup(self.onoffGPIOPin, GPIO.OUT)
-            except ValueError:
-                self._logger.error("onoffGPIOPin %s is invalid!" % self.onoffGPIOPin)
-                self.onoffGPIOPin = 0
-        
-        if not self.enableSensing or self.senseGPIOPin != old_senseGPIOPin:
-            try:
-                GPIO.cleanup(old_senseGPIOPin)
-            except:
-                pass
-
-            try:
-                GPIO.cleanup(self.senseGPIOPin)
-            except:
-                pass
-
-        if ((self.enableSensing and old_enableSensing != self.enableSensing) or self.senseGPIOPin != old_senseGPIOPin):
-            if self.enableSensing:
-                self._logger.debug("Sensing enabled. Configuring GPIO pin %s" % (self.senseGPIOPin))
-            else:
-                self._logger.debug("senseGPIOPin changed from %s to %s. Reconfiguring GPIO" % (old_senseGPIOPin, self.senseGPIOPin))
-
-            try:
-                GPIO.setup(self.senseGPIOPin, GPIO.IN)
-            except ValueError:
-                self._logger.error("senseGPIOPin %s is invalid!" % self.senseGPIOPin)
-                self.senseGPIOPin = 0
-        
         self._start_idle_timer()
 
     def get_template_configs(self):
