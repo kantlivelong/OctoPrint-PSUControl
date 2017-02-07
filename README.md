@@ -3,7 +3,7 @@ This OctoPrint plugin controls an ATX/AUX power supply to help reduce power cons
 
 Power supply can be automatically switched on when user specified commands are sent to the printer and/or switched off when idle.
 
-Supports Commands(G-Code) or GPIO to switch power supply on/off.
+Supports Commands (G-Code or System) or GPIO to switch power supply on/off.
 
 **Requires a Raspberry Pi**
 
