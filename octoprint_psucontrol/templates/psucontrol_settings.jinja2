@@ -6,8 +6,9 @@
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.switchingMethod">
                 <option value="">Select Method...</option>
-                <option value="COMMAND">Command</option>
-                <option value="GPIO">GPIO</option>
+                <option value="COMMAND">GCODE Command</option>
+                <option value="GPIO">GPIO Pin</option>
+                <option value="SYSTEM">System Command</option>
             </select>
         </div>
     </div>
@@ -21,13 +22,28 @@
     <!-- /ko -->
         <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "COMMAND" -->
     <div class="control-group">
-        <label class="control-label">PSU On Command</label>
+        <label class="control-label">PSU On GCODE Command</label>
         <div class="controls">
             <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onCommand">
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label">PSU Off Command</label>
+        <label class="control-label">PSU Off GCODE Command</label>
+        <div class="controls">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.offCommand">
+        </div>
+    </div>
+        <!-- /ko -->
+    <!-- /ko -->
+        <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "SYSTEM" -->
+    <div class="control-group">
+        <label class="control-label">PSU On System Command</label>
+        <div class="controls">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onCommand">
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">PSU Off System Command</label>
         <div class="controls">
             <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.offCommand">
         </div>

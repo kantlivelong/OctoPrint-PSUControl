@@ -11,6 +11,7 @@ from octoprint.util import RepeatedTimer
 import RPi.GPIO as GPIO
 import time
 import threading
+import os
 
 class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.TemplatePlugin,
@@ -226,17 +227,20 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     self._start_idle_timer()
 
     def turn_psu_on(self):
-        if self.switchingMethod == 'COMMAND' or self.switchingMethod == 'GPIO':
+        if self.switchingMethod == 'COMMAND' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
             self._logger.info("Switching PSU On")
             if self.switchingMethod == 'COMMAND':
                 self._logger.debug("Switching PSU On Using COMMAND: %s" % self.onCommand)
                 self._printer.commands(self.onCommand)
-            elif self.switchingMethod == 'GPIO':
-                self._logger.debug("Switching PSU On Using GPIO: %s" % self.onoffGPIOPin)
-                if not self.invertonoffGPIOPin:
-                    pin_output=GPIO.HIGH
-                else:
-                    pin_output=GPIO.LOW
+            elif self.switchingMethod == 'SYSTEM':
+                 self._logger.debug("Switching PSU On Using SYSTEM: %s" % self.onCommand)
+                 os.system(self.onCommand)
+              elif self.switchingMethod == 'GPIO':
+                   self._logger.debug("Switching PSU On Using GPIO: %s" % self.onoffGPIOPin)
+                   if not self.invertonoffGPIOPin:
+                       pin_output=GPIO.HIGH
+                   else:
+                       pin_output=GPIO.LOW
 
                 try:
                     GPIO.output(self.onoffGPIOPin, pin_output)
@@ -250,22 +254,25 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self.check_psu_state()
         
     def turn_psu_off(self):
-        if self.switchingMethod == 'COMMAND' or self.switchingMethod == 'GPIO':
+        if self.switchingMethod == 'COMMAND' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
             self._logger.info("Switching PSU Off")
             if self.switchingMethod == 'COMMAND':
                 self._logger.debug("Switching PSU Off Using COMMAND: %s" % self.offCommand)
                 self._printer.commands(self.offCommand)
-            elif self.switchingMethod == 'GPIO':
-                self._logger.debug("Switching PSU Off Using GPIO: %s" % self.onoffGPIOPin)
-                if not self.invertonoffGPIOPin:
-                    pin_output=GPIO.LOW
-                else:
-                    pin_output=GPIO.HIGH
+            elif self.switchingMethod == 'SYSTEM':
+                self._logger.debug("Switching PSU Off Using SYSTEM: %s" % self.offCommand)
+                os.system(self.offCommand)
+              elif self.switchingMethod == 'GPIO':
+                    self._logger.debug("Switching PSU Off Using GPIO: %s" % self.onoffGPIOPin)
+                    if not self.invertonoffGPIOPin:
+                        pin_output=GPIO.LOW
+                    else:
+                        pin_output=GPIO.HIGH
 
-                try:
-                    GPIO.output(self.onoffGPIOPin, pin_output)
-                except (RuntimeError, ValueError) as e:
-                    self._logger.error(e)
+                    try:
+                        GPIO.output(self.onoffGPIOPin, pin_output)
+                    except (RuntimeError, ValueError) as e:
+                        self._logger.error(e)
 
             if not self.enableSensing:
                 self._noSensing_isPSUOn = False
