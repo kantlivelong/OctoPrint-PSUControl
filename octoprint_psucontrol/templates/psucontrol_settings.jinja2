@@ -24,28 +24,27 @@
     <div class="control-group">
         <label class="control-label">PSU On GCODE Command</label>
         <div class="controls">
-            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onCommand">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onGCodeCommand">
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">PSU Off GCODE Command</label>
         <div class="controls">
-            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.offCommand">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.offGCodeCommand">
         </div>
     </div>
         <!-- /ko -->
-    <!-- /ko -->
         <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "SYSTEM" -->
     <div class="control-group">
         <label class="control-label">PSU On System Command</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.onCommand">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.onSysCommand">
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">PSU Off System Command</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.offCommand">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.offSysCommand">
         </div>
     </div>
         <!-- /ko -->
