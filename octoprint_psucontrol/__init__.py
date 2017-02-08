@@ -28,8 +28,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 	self.onSysCommand = ''
 	self.offSysCommand = ''
         self.autoOn = False
-        self.autoonGCodeCommands = ''
-        self.autoonGCodeCommandsArray = []
+        self.autoOnCommands = ''
+        self.autoOnCommandsArray = []
         self.powerOffWhenIdle = False
         self.idleTimeout = 0
         self.idleIgnoreCommands = ''
@@ -75,9 +75,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self._logger.debug("autoOn: %s" % self.autoOn)
 
-        self.autoonGCodeCommands = self._settings.get(["autoonGCodeCommands"])
-        self.autoonGCodeCommandsArray = self.autoonGCodeCommands.split(',')
-        self._logger.debug("autoonGCodeCommands: %s" % self.autoonGCodeCommands)
+        self.autoOnCommands = self._settings.get(["autoOnCommands"])
+        self.autoOnCommandsArray = self.autoOnCommands.split(',')
+        self._logger.debug("autoOnCommands: %s" % self.autoOnCommands)
 
         self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
         self._logger.debug("powerOffWhenIdle: %s" % self.powerOffWhenIdle)
@@ -227,7 +227,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
     def hook_gcode_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
         if gcode:
-            if (not self.isPSUOn and self.autoOn and (gcode in self.autoonGCodeCommandsArray)):
+            if (not self.isPSUOn and self.autoOn and (gcode in self.autoOnCommandsArray)):
                 self._logger.info("Auto-On - Turning PSU On (Triggered by %s)" % gcode)
                 self.turn_psu_on()
 
@@ -317,7 +317,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             enableSensing = False,
             senseGPIOPin = 0,
             autoOn = False,
-            autoonGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
+            autoOnCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
             powerOffWhenIdle = False,
             idleTimeout = 30,
             idleIgnoreCommands = 'M105',
@@ -342,8 +342,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.enableSensing = self._settings.get_boolean(["enableSensing"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
-        self.autoonGCodeCommands = self._settings.get(["autoonGCodeCommands"])
-        self.autoonGCodeCommandsArray = self.autoonGCodeCommands.split(',')
+        self.autoOnCommands = self._settings.get(["autoOnCommands"])
+        self.autoOnCommandsArray = self.autoOnCommands.split(',')
         self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
         self.idleTimeout = self._settings.get_int(["idleTimeout"])
         self.idleIgnoreCommands = self._settings.get(["idleIgnoreCommands"])
