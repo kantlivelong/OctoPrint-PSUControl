@@ -338,7 +338,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.onGCodeCommand = self._settings.get(["onGCodeCommand"])
         self.offGCodeCommand = self._settings.get(["offGCodeCommand"])
         self.onSysCommand = self._settings.get(["onSysCommand"])
-        self.offSysCommand = self._settings.get(["offGCodeCommand"])
+        self.offSysCommand = self._settings.get(["offSysCommand"])
         self.enableSensing = self._settings.get_boolean(["enableSensing"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
