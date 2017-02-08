@@ -129,7 +129,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.error(e)
 
     def check_psu_state(self):
-	    old_isPSUOn = self.isPSUOn
+	old_isPSUOn = self.isPSUOn
 
         if self.enableSensing:
             self._logger.debug("Polling PSU state...")
