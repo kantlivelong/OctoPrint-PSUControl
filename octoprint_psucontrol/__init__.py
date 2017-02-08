@@ -118,8 +118,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         
         if self.switchingMethod == 'COMMAND':
             self._logger.info("Using Commands for On/Off")
-	    elif self.switchingMethod == 'SYSTEM':
-	        self._logger.info("Using System Commands for On/Off")
+	elif self.switchingMethod == 'SYSTEM':
+	    self._logger.info("Using System Commands for On/Off")
         elif self.switchingMethod == 'GPIO':
             self._logger.info("Using GPIO for On/Off")
             self._logger.info("Configuring GPIO for pin %s" % self.onoffGPIOPin)
