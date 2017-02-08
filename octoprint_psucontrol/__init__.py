@@ -25,8 +25,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.invertonoffGPIOPin = False
         self.onGCodeCommand = ''
         self.offGCodeCommand = ''
-	    self.onSysCommand = ''
-	    self.offSysCommand = ''
+	self.onSysCommand = ''
+	self.offSysCommand = ''
         self.autoOn = False
         self.autoonGCodeCommands = ''
         self.autoonGCodeCommandsArray = []
