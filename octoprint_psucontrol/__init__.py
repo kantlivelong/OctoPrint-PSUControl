@@ -147,9 +147,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         else:
             self.isPSUOn = self._noSensing_isPSUOn
         
-        if self._printer.is_closed_or_error() == False:
-            self.isPSUOn = True
-	
         self._logger.debug("isPSUOn: %s" % self.isPSUOn)
 
         if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
