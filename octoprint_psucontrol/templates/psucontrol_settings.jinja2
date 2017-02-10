@@ -57,6 +57,11 @@
             <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.enableSensing"> Get PSU on/off state via GPIO (Recommended)
             </label>
         </div>
+        <div class="controls">
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.assumeOnIfConnected"> Assume Printer is On if Octoprint is Connected
+            </label>
+        </div>
     </div>
     <!-- ko if: settings.plugins.psucontrol.enableSensing() -->
     <div class="control-group">
