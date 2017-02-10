@@ -1,4 +1,4 @@
-<a id="navbar_plugin_psucontrol" class="nav" href="#" data-bind="enable: loginStateViewModel.isUser, click: function() { $root.togglePSU(); }" style="visibility: hidden">
+<a id="navbar_plugin_psucontrol" class="nav" href="#" data-bind="click: function() { loginState.isUser() && $root.togglePSU(); }" style="visibility: hidden">
 	<i id="powercontrol_psu_indicator" class="icon-bolt"></i>
 </a>
 
@@ -18,6 +18,6 @@
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
-        <a href="#" class="btn btn-danger" data-bind="click: function() { $root.turnPSUOff(); }">{{ _('Proceed') }}</a>
+        <a href="#" class="btn btn-danger" data-bind="click: function() { loginState.isUser() && $root.turnPSUOff(); }">{{ _('Proceed') }}</a>
     </div>
 </div>

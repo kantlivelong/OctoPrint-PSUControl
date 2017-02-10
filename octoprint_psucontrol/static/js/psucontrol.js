@@ -2,7 +2,7 @@ $(function() {
     function PSUControlViewModel(parameters) {
         var self = this;
 
-        self.loginStateViewModel = parameters[0];
+        self.loginState = parameters[0];
         self.isPSUOn = ko.observable();
 	self.psu_indicator = undefined;
 	self.poweroff_dialog = undefined;
