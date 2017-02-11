@@ -44,7 +44,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._waitForHeaters = False
         self._skipIdleTimer = False
 
-    def initialize(self):
+    def on_settings_initialized(self):
         self.switchingMethod = self._settings.get(["switchingMethod"])
         self._logger.debug("switchingMethod: %s" % self.switchingMethod)
 
@@ -359,6 +359,36 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._configure_gpio()
 
         self._start_idle_timer()
+
+    def get_settings_version(self):
+        return 2
+
+    def on_settings_migrate(self, target, current=None):
+        self._logger.debug("on_settings_migrate() target=%s, current=%s" % (target, current))
+        if current is None or current < 2:
+            # v2 changes names of settings variables to accomidate system commands.
+            cur_switchingMethod = self._settings.get(["switchingMethod"])
+            if cur_switchingMethod is not None and cur_switchingMethod == "COMMAND":
+                self._logger.info("Migrating Setting: switchingMethod=COMMAND -> switchingMethod=GCODE")
+                self._settings.set(["switchingMethod"], "GCODE")
+
+            cur_onCommand = self._settings.get(["onCommand"])
+            if cur_onCommand is not None:
+                self._logger.info("Migrating Setting: onCommand={0} -> onGCodeCommand={0}".format(cur_onCommand))
+                self._settings.set(["onGCodeCommand"], cur_onCommand)
+                self._settings.remove(["onCommand"])
+            
+            cur_offCommand = self._settings.get(["offCommand"])
+            if cur_offCommand is not None:
+                self._logger.info("Migrating Setting: offCommand={0} -> offGCodeCommand={0}".format(cur_offCommand))
+                self._settings.set(["offGCodeCommand"], cur_offCommand)
+                self._settings.remove(["offCommand"])
+
+            cur_autoOnCommands = self._settings.get(["autoOnCommands"])
+            if cur_autoOnCommands is not None:
+                self._logger.info("Migrating Setting: autoOnCommands={0} -> autoOnTriggerGCodeCommands={0}".format(cur_autoOnCommands))
+                self._settings.set(["autoOnTriggerGCodeCommands"], cur_autoOnCommands)
+                self._settings.remove(["autoOnCommands"])
 
     def get_template_configs(self):
         return [
