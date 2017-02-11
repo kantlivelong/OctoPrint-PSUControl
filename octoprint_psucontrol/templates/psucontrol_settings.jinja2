@@ -6,8 +6,9 @@
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.switchingMethod">
                 <option value="">Select Method...</option>
-                <option value="COMMAND">Command</option>
-                <option value="GPIO">GPIO</option>
+                <option value="COMMAND">GCODE Command</option>
+                <option value="GPIO">GPIO Pin</option>
+                <option value="SYSTEM">System Command</option>
             </select>
         </div>
     </div>
@@ -21,15 +22,29 @@
     <!-- /ko -->
         <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "COMMAND" -->
     <div class="control-group">
-        <label class="control-label">PSU On Command</label>
+        <label class="control-label">PSU On GCODE Command</label>
         <div class="controls">
-            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onCommand">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onGCodeCommand">
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label">PSU Off Command</label>
+        <label class="control-label">PSU Off GCODE Command</label>
         <div class="controls">
-            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.offCommand">
+            <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.offGCodeCommand">
+        </div>
+    </div>
+        <!-- /ko -->
+        <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "SYSTEM" -->
+    <div class="control-group">
+        <label class="control-label">PSU On System Command</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.onSysCommand">
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">PSU Off System Command</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.offSysCommand">
         </div>
     </div>
         <!-- /ko -->
@@ -40,6 +55,11 @@
         <div class="controls">
             <label class="checkbox">
             <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.enableSensing"> Get PSU on/off state via GPIO (Recommended)
+            </label>
+        </div>
+        <div class="controls">
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.assumeOnIfConnected"> Assume Printer is On if Octoprint is Connected
             </label>
         </div>
     </div>
