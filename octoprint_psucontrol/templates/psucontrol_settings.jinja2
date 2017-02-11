@@ -6,9 +6,9 @@
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.switchingMethod">
                 <option value="">Select Method...</option>
-                <option value="COMMAND">GCODE Command</option>
-                <option value="GPIO">GPIO Pin</option>
+                <option value="GCODE">G-Code Command</option>
                 <option value="SYSTEM">System Command</option>
+                <option value="GPIO">GPIO Pin</option>
             </select>
         </div>
     </div>
@@ -20,7 +20,7 @@
         </div>
     </div>
     <!-- /ko -->
-        <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "COMMAND" -->
+        <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "GCODE" -->
     <div class="control-group">
         <label class="control-label">PSU On GCODE Command</label>
         <div class="controls">
@@ -80,7 +80,7 @@
     <div class="control-group">
         <label class="control-label">Trigger Commands</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.autoOnCommands">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.autoOnTriggerGCodeCommands">
         </div>
     </div>
     <!-- /ko -->
