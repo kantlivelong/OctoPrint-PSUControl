@@ -22,13 +22,13 @@
     <!-- /ko -->
         <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "GCODE" -->
     <div class="control-group">
-        <label class="control-label">PSU On GCODE Command</label>
+        <label class="control-label">On G-Code Command</label>
         <div class="controls">
             <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.onGCodeCommand">
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label">PSU Off GCODE Command</label>
+        <label class="control-label">Off G-Code Command</label>
         <div class="controls">
             <input type="text" class="input-mini" data-bind="value: settings.plugins.psucontrol.offGCodeCommand">
         </div>
@@ -36,13 +36,13 @@
         <!-- /ko -->
         <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "SYSTEM" -->
     <div class="control-group">
-        <label class="control-label">PSU On System Command</label>
+        <label class="control-label">On System Command</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.onSysCommand">
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label">PSU Off System Command</label>
+        <label class="control-label">Off System Command</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.offSysCommand">
         </div>
