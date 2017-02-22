@@ -20,6 +20,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.SimpleApiPlugin):
 
     def __init__(self):
+        self._pin_to_gpio_rev1 = [-1, -1, -1, 0, -1, 1, -1, 4, 14, -1, 15, 17, 18, 21, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
+        self._pin_to_gpio_rev2 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
+        self._pin_to_gpio_rev3 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, 5, -1, 6, 12, 13, -1, 19, 16, 26, 20, -1, 21 ]
+
         self.switchingMethod = ''
         self.onoffGPIOPin = 0
         self.invertonoffGPIOPin = False
@@ -43,6 +47,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._idleTimer = None
         self._waitForHeaters = False
         self._skipIdleTimer = False
+        self._configuredGPIOPins = []
 
     def on_settings_initialized(self):
         self.switchingMethod = self._settings.get(["switchingMethod"])
@@ -65,7 +70,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.offSysCommand = self._settings.get(["offSysCommand"])
         self._logger.debug("offSysCommand: %s" % self.offSysCommand)
-	
+
         self.enableSensing = self._settings.get_boolean(["enableSensing"])
         self._logger.debug("enableSensing: %s" % self.enableSensing)
 
@@ -99,43 +104,72 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._start_idle_timer()
 
+    def _gpio_board_to_bcm(self, pin):
+        if GPIO.RPI_REVISION == 1:
+            pin_to_gpio = self._pin_to_gpio_rev1
+        elif GPIO.RPI_REVISION == 2:
+            pin_to_gpio = self._pin_to_gpio_rev2
+        else:
+            pin_to_gpio = self._pin_to_gpio_rev3
+
+        return pin_to_gpio[pin]
+
+    def _gpio_get_pin(self, pin):
+        if GPIO.getmode() == GPIO.BOARD:
+            return pin
+        elif GPIO.getmode() == GPIO.BCM:
+            return self._gpio_board_to_bcm(pin)
+        else:
+            return 0
+
     def _configure_gpio(self):
         self._logger.info("Running RPi.GPIO version %s" % GPIO.VERSION)
         if GPIO.VERSION < "0.6":
             self._logger.error("RPi.GPIO version 0.6.0 or greater required.")
         
         GPIO.setwarnings(False)
-        GPIO.cleanup()
-        GPIO.setmode(GPIO.BOARD)
+
+        for pin in self._configuredGPIOPins:
+            self._logger.debug("Cleaning up pin %s" % pin)
+            try:
+                GPIO.cleanup(self._gpio_get_pin(pin))
+            except (RuntimeError, ValueError) as e:
+                self._logger.error(e)
+        self._configuredGPIOPins = []
+
+        if GPIO.getmode() is None:
+            GPIO.setmode(GPIO.BOARD)
         
         if self.enableSensing:
             self._logger.info("Using sensing to determine PSU on/off state.")
             self._logger.info("Configuring GPIO for pin %s" % self.senseGPIOPin)
             try:
-                GPIO.setup(self.senseGPIOPin, GPIO.IN)
+                GPIO.setup(self._gpio_get_pin(self.senseGPIOPin), GPIO.IN)
+                self._configuredGPIOPins.append(self.senseGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
         
         if self.switchingMethod == 'GCODE':
             self._logger.info("Using G-Code Commands for On/Off")
-	elif self.switchingMethod == 'SYSTEM':
-	    self._logger.info("Using System Commands for On/Off")
+        elif self.switchingMethod == 'SYSTEM':
+            self._logger.info("Using System Commands for On/Off")
         elif self.switchingMethod == 'GPIO':
             self._logger.info("Using GPIO for On/Off")
             self._logger.info("Configuring GPIO for pin %s" % self.onoffGPIOPin)
             try:
-                GPIO.setup(self.onoffGPIOPin, GPIO.OUT)
+                GPIO.setup(self._gpio_get_pin(self.onoffGPIOPin), GPIO.OUT)
+                self._configuredGPIOPins.append(self.onoffGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
 
     def check_psu_state(self):
-	old_isPSUOn = self.isPSUOn
+        old_isPSUOn = self.isPSUOn
 
         if self.enableSensing:
             self._logger.debug("Polling PSU state...")
             r = 0
             try:
-                r = GPIO.input(self.senseGPIOPin)
+                r = GPIO.input(self._gpio_get_pin(self.senseGPIOPin))
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
             self._logger.debug("Result: %s" % r)
@@ -254,7 +288,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     pin_output=GPIO.LOW
 
                 try:
-                    GPIO.output(self.onoffGPIOPin, pin_output)
+                    GPIO.output(self._gpio_get_pin(self.onoffGPIOPin), pin_output)
                 except (RuntimeError, ValueError) as e:
                     self._logger.error(e)
 
@@ -282,7 +316,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     pin_output=GPIO.HIGH
 		
                 try:
-                    GPIO.output(self.onoffGPIOPin, pin_output)
+                    GPIO.output(self._gpio_get_pin(self.onoffGPIOPin), pin_output)
                 except (RuntimeError, ValueError) as e:
                     self._logger.error(e)
 
