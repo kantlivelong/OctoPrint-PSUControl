@@ -12,6 +12,7 @@ import RPi.GPIO as GPIO
 import time
 import threading
 import os
+from flask import make_response
 
 class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.TemplatePlugin,
