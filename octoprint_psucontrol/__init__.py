@@ -32,6 +32,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.offGCodeCommand = ''
         self.onSysCommand = ''
         self.offSysCommand = ''
+        self.postOnDelay = 0.0
         self.autoOn = False
         self.autoOnTriggerGCodeCommands = ''
         self._autoOnTriggerGCodeCommandsArray = []
@@ -71,6 +72,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.offSysCommand = self._settings.get(["offSysCommand"])
         self._logger.debug("offSysCommand: %s" % self.offSysCommand)
+
+        self.postOnDelay = self._settings.get_float(["postOnDelay"])
+        self._logger.debug("postOnDelay: %s" % self.postOnDelay)
 
         self.enableSensing = self._settings.get_boolean(["enableSensing"])
         self._logger.debug("enableSensing: %s" % self.enableSensing)
@@ -296,7 +300,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if not self.enableSensing:
                 self._noSensing_isPSUOn = True
          
-            time.sleep(0.1)
+            time.sleep(0.1 + self.postOnDelay)
             self.check_psu_state()
         
     def turn_psu_off(self):
@@ -351,6 +355,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             offGCodeCommand = 'M81', 
             onSysCommand = '',
             offSysCommand = '',
+            postOnDelay = 0.0,
             enableSensing = False,
             senseGPIOPin = 0,
             autoOn = False,
@@ -376,6 +381,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.offGCodeCommand = self._settings.get(["offGCodeCommand"])
         self.onSysCommand = self._settings.get(["onSysCommand"])
         self.offSysCommand = self._settings.get(["offSysCommand"])
+        self.postOnDelay = self._settings.get_float(["postOnDelay"])
         self.enableSensing = self._settings.get_boolean(["enableSensing"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
