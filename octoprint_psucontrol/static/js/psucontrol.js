@@ -7,7 +7,7 @@ $(function() {
         self.psu_indicator = undefined;
         self.poweroff_dialog = undefined;
 
-        self.onStartup = function() {
+        self.onAfterBinding = function() {
             self.poweroff_dialog = $("#psucontrol_poweroff_confirmation_dialog");
             self.psu_indicator = $("#powercontrol_psu_indicator");
         };
