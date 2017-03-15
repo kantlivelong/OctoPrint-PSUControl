@@ -2,12 +2,16 @@ $(function() {
     function PSUControlViewModel(parameters) {
         var self = this;
 
-        self.loginState = parameters[0];
+        self.global_settings = parameters[0];
+        self.settings = undefined;
+        self.loginState = parameters[1];
         self.isPSUOn = ko.observable();
         self.psu_indicator = undefined;
         self.poweroff_dialog = undefined;
 
         self.onAfterBinding = function() {
+            self.settings = self.global_settings.settings.plugins.psucontrol;
+
             self.poweroff_dialog = $("#psucontrol_poweroff_confirmation_dialog");
             self.psu_indicator = $("#powercontrol_psu_indicator");
         };
@@ -32,7 +36,11 @@ $(function() {
 
         self.togglePSU = function() {
             if (self.isPSUOn()) {
-                self.showPowerOffDialog();
+                if (self.settings.enablePowerOffWarningDialog()) {
+                    self.showPowerOffDialog();
+                } else {
+                    self.turnPSUOff();
+                }
             } else {
                 self.turnPSUOn();
             }
@@ -71,7 +79,7 @@ $(function() {
 
     ADDITIONAL_VIEWMODELS.push([
         PSUControlViewModel,
-        ["loginStateViewModel"],
+        ["settingsViewModel", "loginStateViewModel"],
         ["#navbar_plugin_psucontrol"]
     ]);
 });

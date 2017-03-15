@@ -36,6 +36,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.autoOn = False
         self.autoOnTriggerGCodeCommands = ''
         self._autoOnTriggerGCodeCommandsArray = []
+        self.enablePowerOffWarningDialog = True
         self.powerOffWhenIdle = False
         self.idleTimeout = 0
         self.idleIgnoreCommands = ''
@@ -88,6 +89,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
         self._logger.debug("autoOnTriggerGCodeCommands: %s" % self.autoOnTriggerGCodeCommands)
+
+        self.enablePowerOffWarningDialog = self._settings.get_boolean(["enablePowerOffWarningDialog"])
+        self._logger.debug("enablePowerOffWarningDialog: %s" % self.enablePowerOffWarningDialog)
 
         self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
         self._logger.debug("powerOffWhenIdle: %s" % self.powerOffWhenIdle)
@@ -360,6 +364,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             senseGPIOPin = 0,
             autoOn = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
+            enablePowerOffWarningDialog = True,
             powerOffWhenIdle = False,
             idleTimeout = 30,
             idleIgnoreCommands = 'M105',
@@ -390,6 +395,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
         self.idleTimeout = self._settings.get_int(["idleTimeout"])
         self.idleIgnoreCommands = self._settings.get(["idleIgnoreCommands"])
+        self.enablePowerOffWarningDialog = self._settings.get_boolean(["enablePowerOffWarningDialog"])
         self._idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         
