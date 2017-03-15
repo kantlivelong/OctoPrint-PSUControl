@@ -55,19 +55,19 @@ $(function() {
         };
 
     	self.turnPSUOff = function() {
-                $.ajax({
-                    url: API_BASEURL + "plugin/psucontrol",
-                    type: "POST",
-                    dataType: "json",
-                    data: JSON.stringify({
-                        command: "turnPSUOff"
-                    }),
-                    contentType: "application/json; charset=UTF-8"
-                })
+            $.ajax({
+                url: API_BASEURL + "plugin/psucontrol",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "turnPSUOff"
+                }),
+                contentType: "application/json; charset=UTF-8"
+            })
 
-                self.poweroff_dialog.modal("hide");
-            };   
-        }
+            self.poweroff_dialog.modal("hide");
+        };   
+    }
 
     ADDITIONAL_VIEWMODELS.push([
         PSUControlViewModel,
