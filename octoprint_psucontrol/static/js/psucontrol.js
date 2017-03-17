@@ -5,7 +5,7 @@ $(function() {
         self.global_settings = parameters[0];
         self.settings = undefined;
         self.loginState = parameters[1];
-        self.isPSUOn = ko.observable();
+        self.isPSUOn = ko.observable(undefined);
         self.psu_indicator = undefined;
         self.poweroff_dialog = undefined;
 
@@ -29,7 +29,6 @@ $(function() {
                 self.psu_indicator.css('color', '#808080');
             }
 
-            self.psu_indicator.removeClass("invisible");
         };
 
         self.togglePSU = function() {
@@ -44,11 +43,11 @@ $(function() {
             }
         };
 
-    	self.showPowerOffDialog = function() {
+        self.showPowerOffDialog = function() {
             self.poweroff_dialog.modal("show");
         };
 
-    	self.turnPSUOn = function() {
+        self.turnPSUOn = function() {
             $.ajax({
                 url: API_BASEURL + "plugin/psucontrol",
                 type: "POST",
