@@ -1,7 +1,6 @@
-<a id="navbar_plugin_psucontrol" class="nav" href="#" data-bind="click: function() { loginState.isUser() && $root.togglePSU(); }" style="visibility: hidden">
-	<i id="powercontrol_psu_indicator" class="icon-bolt"></i>
+<a id="psucontrol_indicator" class="pull-right invisible" title="Toggle PSU" href="#" data-bind="click: function() { loginState.isUser() && $root.togglePSU(); }">
+	<i class="icon-bolt"></i>
 </a>
-
 
 <div id="psucontrol_poweroff_confirmation_dialog" class="modal hide fade">
     <div class="modal-header">

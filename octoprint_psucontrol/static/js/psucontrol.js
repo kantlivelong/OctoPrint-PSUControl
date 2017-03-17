@@ -13,7 +13,7 @@ $(function() {
             self.settings = self.global_settings.settings.plugins.psucontrol;
 
             self.poweroff_dialog = $("#psucontrol_poweroff_confirmation_dialog");
-            self.psu_indicator = $("#powercontrol_psu_indicator");
+            self.psu_indicator = $("#psucontrol_indicator");
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
@@ -29,9 +29,7 @@ $(function() {
                 self.psu_indicator.css('color', '#808080');
             }
 
-            if (self.psu_indicator.css('visibility') == "hidden") {
-                self.psu_indicator.css('visibility', 'visible');
-            }
+            self.psu_indicator.removeClass("invisible");
         };
 
         self.togglePSU = function() {
