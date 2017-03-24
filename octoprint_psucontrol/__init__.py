@@ -25,6 +25,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._pin_to_gpio_rev2 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
         self._pin_to_gpio_rev3 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, 5, -1, 6, 12, 13, -1, 19, 16, 26, 20, -1, 21 ]
 
+        self.GPIOMode = ''
         self.switchingMethod = ''
         self.onoffGPIOPin = 0
         self.invertonoffGPIOPin = False
@@ -53,6 +54,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._configuredGPIOPins = []
 
     def on_settings_initialized(self):
+        self.GPIOMode = self._settings.get(["GPIOMode"])
+        self._logger.debug("GPIOMode: %s" % self.GPIOMode)
+
         self.switchingMethod = self._settings.get(["switchingMethod"])
         self._logger.debug("switchingMethod: %s" % self.switchingMethod)
 
@@ -123,10 +127,22 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         return pin_to_gpio[pin]
 
+    def _gpio_bcm_to_board(self, pin):
+        if GPIO.RPI_REVISION == 1:
+            pin_to_gpio = self._pin_to_gpio_rev1
+        elif GPIO.RPI_REVISION == 2:
+            pin_to_gpio = self._pin_to_gpio_rev2
+        else:
+            pin_to_gpio = self._pin_to_gpio_rev3
+
+        return pin_to_gpio.index(pin)
+
     def _gpio_get_pin(self, pin):
-        if GPIO.getmode() == GPIO.BOARD:
+        if (GPIO.getmode() == GPIO.BOARD and self.GPIOMode == 'BOARD') or (GPIO.getmode() == GPIO.BCM and self.GPIOMode == 'BCM'):
             return pin
-        elif GPIO.getmode() == GPIO.BCM:
+        elif GPIO.getmode() == GPIO.BOARD and self.GPIOMode == 'BCM':
+            return self._gpio_bcm_to_board(pin)
+        elif GPIO.getmode() == GPIO.BCM and self.GPIOMode == 'BOARD':
             return self._gpio_board_to_bcm(pin)
         else:
             return 0
@@ -147,7 +163,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._configuredGPIOPins = []
 
         if GPIO.getmode() is None:
-            GPIO.setmode(GPIO.BOARD)
+            if self.GPIOMode == 'BOARD':
+                GPIO.setmode(GPIO.BOARD)
+            elif self.GPIOMode == 'BCM':
+                GPIO.setmode(GPIO.BCM)
+            else:
+                return
         
         if self.enableSensing:
             self._logger.info("Using sensing to determine PSU on/off state.")
@@ -352,6 +373,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
     def get_settings_defaults(self):
         return dict(
+            GPIOMode = 'BOARD',
             switchingMethod = '',
             onoffGPIOPin = 0,
             invertonoffGPIOPin = False,
@@ -372,6 +394,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         )
 
     def on_settings_save(self, data):
+        old_GPIOMode = self.GPIOMode
         old_onoffGPIOPin = self.onoffGPIOPin
         old_enableSensing = self.enableSensing
         old_senseGPIOPin = self.senseGPIOPin
@@ -379,6 +402,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
         
+        self.GPIOMode = self._settings.get(["GPIOMode"])
         self.switchingMethod = self._settings.get(["switchingMethod"])
         self.onoffGPIOPin = self._settings.get_int(["onoffGPIOPin"])
         self.invertonoffGPIOPin = self._settings.get_boolean(["invertonoffGPIOPin"])
@@ -399,7 +423,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         
-        if (old_onoffGPIOPin != self.onoffGPIOPin or
+        if (old_GPIOMode != self.GPIOMode or
+           old_onoffGPIOPin != self.onoffGPIOPin or
            old_senseGPIOPin != self.senseGPIOPin or
            old_enableSensing != self.enableSensing or
            old_switchingMethod != self.switchingMethod):

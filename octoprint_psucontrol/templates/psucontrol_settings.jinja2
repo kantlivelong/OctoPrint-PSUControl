@@ -6,7 +6,19 @@
             <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.enablePowerOffWarningDialog"> Show warning dialog when powering off via toggle button.
             </label>
         </div>
-    </div>    
+    </div>
+    <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "GPIO" || settings.plugins.psucontrol.enableSensing() -->
+    <div class="control-group">
+        <label class="control-label">GPIO Mode</label>
+        <div class="controls">
+            <select data-bind="value: settings.plugins.psucontrol.GPIOMode">
+                <option value="BOARD">BOARD</option>
+                <option value="BCM">BCM</option>
+            </select>
+            <span class="help-inline">Pin number will be converted if an alternate mode has already been set by another plugin.</span>
+        </div>
+    </div>
+    <!-- /ko -->
     <br />
 
     <h4>Switching</h4>
