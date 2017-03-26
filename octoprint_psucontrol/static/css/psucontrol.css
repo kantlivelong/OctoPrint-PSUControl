@@ -1,0 +1,31 @@
+.icon-toggle-on,
+.icon-toggle-on:hover {
+  display: inline-block;
+  width: 14px;
+  height: 20px;
+  margin-top: 1px;
+  margin-right: .3em;
+  line-height: 14px;
+  vertical-align: text-top;
+  background-color: rgba(1,1,1,0) !important;
+  background-image: url("../img/toggle-on.svg") !important;
+  background-repeat: no-repeat !important;
+  background-size: 22px;
+  background-position: 50% 55%;
+}
+
+.icon-toggle-off,
+.icon-toggle-off:hover {
+  display: inline-block;
+  width: 14px;
+  height: 20px;
+  margin-top: 1px;
+  margin-right: .3em;
+  line-height: 14px;
+  vertical-align: text-top;
+  background-color: rgba(1,1,1,0) !important;
+  background-image: url("../img/toggle-off.svg") !important;
+  background-repeat: no-repeat !important;
+  background-size: 22px;
+  background-position: 50% 55%;
+}

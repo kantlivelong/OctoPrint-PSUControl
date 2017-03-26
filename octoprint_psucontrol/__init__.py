@@ -27,6 +27,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.GPIOMode = ''
         self.switchingMethod = ''
+        self.iconStyle = 'bolt'
         self.onoffGPIOPin = 0
         self.invertonoffGPIOPin = False
         self.onGCodeCommand = ''
@@ -59,6 +60,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.switchingMethod = self._settings.get(["switchingMethod"])
         self._logger.debug("switchingMethod: %s" % self.switchingMethod)
+
+        self.iconStyle = self._settings.get(["iconStyle"])
+        self._logger.debug("iconStyle: %s" % self.iconStyle)
 
         self.onoffGPIOPin = self._settings.get_int(["onoffGPIOPin"])
         self._logger.debug("onoffGPIOPin: %s" % self.onoffGPIOPin)
@@ -375,6 +379,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         return dict(
             GPIOMode = 'BOARD',
             switchingMethod = '',
+            iconStyle = 'bolt',
             onoffGPIOPin = 0,
             invertonoffGPIOPin = False,
             onGCodeCommand = 'M80', 
@@ -404,6 +409,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         
         self.GPIOMode = self._settings.get(["GPIOMode"])
         self.switchingMethod = self._settings.get(["switchingMethod"])
+        self.iconStyle = self._settings.get(["iconStyle"])
         self.onoffGPIOPin = self._settings.get_int(["onoffGPIOPin"])
         self.invertonoffGPIOPin = self._settings.get_boolean(["invertonoffGPIOPin"])
         self.onGCodeCommand = self._settings.get(["onGCodeCommand"])
@@ -430,6 +436,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
            old_switchingMethod != self.switchingMethod):
             self._configure_gpio()
 
+        self.check_psu_state()
         self._start_idle_timer()
 
     def get_settings_version(self):
@@ -468,7 +475,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
     def get_assets(self):
         return {
-            "js": ["js/psucontrol.js"]
+            "js":  ["js/psucontrol.js"],
+            "css": ["css/psucontrol.css"]
         } 
 
     def get_update_information(self):
