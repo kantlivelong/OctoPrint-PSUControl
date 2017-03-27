@@ -1,5 +1,5 @@
-<a id="psucontrol_indicator" class="pull-right" title="Toggle PSU" href="#" data-bind="click: function() { loginState.isUser() && $root.togglePSU(); }, visible: (isPSUOn() !== undefined)" style="display: none">
-    <i class="icon-bolt"></i>
+<a id="psucontrol_indicator" class="pull-right {% if plugins_psucontrol_iconStyle == "switch" %}icon-toggle-off{% endif %}" title="Toggle PSU" href="#" data-bind="click: function() { loginState.isUser() && $root.togglePSU(); }, visible: (isPSUOn() !== undefined)" style="display: none">
+    <i {% if plugins_psucontrol_iconStyle != "switch" %}class="icon-bolt"{% endif %}></i>
 </a>
 
 <div id="psucontrol_poweroff_confirmation_dialog" class="modal hide fade">
