@@ -116,9 +116,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._configure_gpio()
 
-        self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
-        self._checkPSUTimer.start()
-
+        self._start_checkPSU_timer()
         self._start_idle_timer()
 
     def _gpio_board_to_bcm(self, pin):
@@ -235,6 +233,17 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if self._idleTimer:
             self._idleTimer.cancel()
             self._idleTimer = None
+
+    def _start_checkPSU_timer(self):
+        self._stop_checkPSU_timer()
+        
+        self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
+        self._checkPSUTimer.start()
+
+    def _stop_checkPSU_timer(self):
+        if self._checkPSUTimer:
+            self._checkPSUTimer.cancel()
+            self._checkPSUTimer = None
 
     def _idle_poweroff(self):
         if not self.powerOffWhenIdle:
@@ -436,7 +445,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
            old_switchingMethod != self.switchingMethod):
             self._configure_gpio()
 
-        self.check_psu_state()
+        self._start_checkPSU_timer()
         self._start_idle_timer()
 
     def get_settings_version(self):
