@@ -44,6 +44,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._idleIgnoreCommandsArray = []
         self.idleTimeoutWaitTemp = 0
         self.enableSensing = False
+        self.disconnectOnPowerOff = False
         self.senseGPIOPin = 0
         self.isPSUOn = False
         self._noSensing_isPSUOn = False
@@ -83,6 +84,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.enableSensing = self._settings.get_boolean(["enableSensing"])
         self._logger.debug("enableSensing: %s" % self.enableSensing)
+
+        self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
+        self._logger.debug("disconnectOnPowerOff: %s" % self.disconnectOnPowerOff)
 
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self._logger.debug("senseGPIOPin: %s" % self.senseGPIOPin)
@@ -350,6 +354,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 except (RuntimeError, ValueError) as e:
                     self._logger.error(e)
 
+            if self.disconnectOnPowerOff:
+                self._printer.disconnect()
+                
             if not self.enableSensing:
                 self._noSensing_isPSUOn = False
                         
@@ -383,6 +390,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             offSysCommand = '',
             postOnDelay = 0.0,
             enableSensing = False,
+            disconnectOnPowerOff = False,
             senseGPIOPin = 0,
             autoOn = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
@@ -412,6 +420,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.offSysCommand = self._settings.get(["offSysCommand"])
         self.postOnDelay = self._settings.get_float(["postOnDelay"])
         self.enableSensing = self._settings.get_boolean(["enableSensing"])
+        self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
