@@ -88,7 +88,25 @@
     </div>
     <!-- /ko -->
     <br />
-
+    
+    <h4>Hardware Button</h4>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.enableOnOffButton"> Switch PSU on/off via Button that is connected to a GPIO Pin
+            </label>
+        </div>
+    </div>
+    <!-- ko if: settings.plugins.psucontrol.enableOnOffButton() -->
+    <div class="control-group">
+        <label class="control-label">Button GPIO Pin</label>
+        <div class="controls">
+            <input type="number" min="0" class="input-mini" data-bind="value: settings.plugins.psucontrol.onOffButtonGPIOPin">
+        </div>
+    </div>
+    <!-- /ko -->
+    <br />
+    
     <h4>Power On Options</h4>
     <div class="control-group">
         <div class="controls">
