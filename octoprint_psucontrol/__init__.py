@@ -126,7 +126,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
         self._checkPSUTimer.start()
-
+	
+	self._checkButtonTimer = RepeatedTimer(3.0, self.check_button_state, None, None, True)
+        self._checkButtonTimer.start()
+	
         self._start_idle_timer()
 
     def _gpio_board_to_bcm(self, pin):
