@@ -32,6 +32,7 @@ Install the plugin using Plugin Manager from Settings
 
 ###### On/Off Button GPIO Pin
 &nbsp;&nbsp;&nbsp;&nbsp; This option is only required if you want to switch PSU on/off using a physical button connected to a GPIO pin.
+
 &nbsp;&nbsp;&nbsp;&nbsp; If you want to start your Printer without connecting to the OctoPrint Webinterface for printing quickly from SD-Card. You have to wire the button using a pull down resistor. The GPIO internal resistor is set to pull down mode.
 
 ![Button with pull down resistor](rpi_pull_down.png?raw=true)
