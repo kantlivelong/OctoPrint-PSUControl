@@ -203,7 +203,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Configuring GPIO for pin %s" % self.onOffButtonGPIOPin)
             try:
                 GPIO.setup(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-                self._configuredGPIOPins.append(self.onOffGPIOPin)
+                self._configuredGPIOPins.append(self.onOffButtonGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
     
