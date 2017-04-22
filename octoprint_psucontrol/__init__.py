@@ -49,11 +49,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.isPSUOn = False
         self._noSensing_isPSUOn = False
         self._checkPSUTimer = None
+        self._checkButton = None
         self._idleTimer = None
         self._waitForHeaters = False
         self._skipIdleTimer = False
-	self.enableOnOffButton = False
-	self.onOffButtonGPIOPin = 0
+		self.enableOnOffButton = False
+		self.onOffButtonGPIOPin = 0
         self._configuredGPIOPins = []
 
     def on_settings_initialized(self):
@@ -93,10 +94,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self._logger.debug("senseGPIOPin: %s" % self.senseGPIOPin)
 	
-	self.enableOnOffButton = self._settings.get_boolean(["enableOnOffButton"])
+		self.enableOnOffButton = self._settings.get_boolean(["enableOnOffButton"])
         self._logger.debug("enableOnOffButton: %s" % self.enableOnOffButton)
 	
-	self.onOffButtonGPIOPin = self._settings.get_int(["onOffButtonGPIOPin"])
+		self.onOffButtonGPIOPin = self._settings.get_int(["onOffButtonGPIOPin"])
         self._logger.debug("onOffButtonGPIOPin: %s" % self.onOffButtonGPIOPin)
 
         self.autoOn = self._settings.get_boolean(["autoOn"])
@@ -126,10 +127,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
         self._checkPSUTimer.start()
-	
-	self._checkButtonTimer = RepeatedTimer(3.0, self.check_button_state, None, None, True)
-        self._checkButtonTimer.start()
-	
+
+		if self.enableOnOffButton:
+			try:
+				GPIO.add_event_detect(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.RISING, callback=self.toggle_psu, bouncetime=500) 
+			except (RuntimeError, ValueError) as e:
+                self._logger.error(e)
+
         self._start_idle_timer()
 
     def _gpio_board_to_bcm(self, pin):
@@ -195,10 +199,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.error(e)
         
         if self.enableOnOffButton:
-            self._logger.info("Using Hardware Button to switch PSU on/off.")
+            self._logger.info("Using physical Button to switch PSU on/off.")
             self._logger.info("Configuring GPIO for pin %s" % self.onOffButtonGPIOPin)
             try:
-                GPIO.setup(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.IN)
+                GPIO.setup(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
                 self._configuredGPIOPins.append(self.onOffGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
@@ -212,6 +216,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Configuring GPIO for pin %s" % self.onoffGPIOPin)
             try:
                 GPIO.setup(self._gpio_get_pin(self.onoffGPIOPin), GPIO.OUT)
+
                 self._configuredGPIOPins.append(self.onoffGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
@@ -244,21 +249,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._plugin_manager.send_plugin_message(self._identifier, dict(isPSUOn=self.isPSUOn))
 	
-    def check_button_state(self):
-        self._logger.debug("Polling On/Off Button state...")
-        r = 0
-        try:
-            r = GPIO.input(self._gpio_get_pin(self.onOffButtonGPIOPin))
-        except (RuntimeError, ValueError) as e:
-            self._logger.error(e)
-        self._logger.debug("Result: %s" % r)
-
-        if r==1:
-	    if self.isPSUOn:
-            	self.turn_psu_on()
-	    else:
-		self.turn.psu_off()
-		
     def _start_idle_timer(self):
         self._stop_idle_timer()
         
@@ -398,6 +388,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             time.sleep(0.1)
             self.check_psu_state()
 
+    def toggle_psu(self):
+        self._logger.debug("Toggling PSU")
+
+		if self.isPSUOn:
+			self.turn_psu_off()
+		else:
+			self.turn.psu_on()
+		
     def get_api_commands(self):
         return dict(
             turnPSUOn=[],
@@ -427,8 +425,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             enableSensing = False,
             disconnectOnPowerOff = False,
             senseGPIOPin = 0,
-	    enableOnOffButton = False,
-	    onOffGPIOPin = 0,
+			enableOnOffButton = False,
+			onOffGPIOPin = 0,
             autoOn = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
             enablePowerOffWarningDialog = True,
@@ -462,7 +460,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self.enableOnOffButton = self._settings.get_boolean(["enableOnOffButton"])
-	self.onOffGPIOPin = self._settings.get_int(["onOffGPIOPin"])
+		self.onOffGPIOPin = self._settings.get_int(["onOffGPIOPin"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
@@ -474,13 +472,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         
         if (old_GPIOMode != self.GPIOMode or
-           old_onoffGPIOPin != self.onoffGPIOPin or
-           old_senseGPIOPin != self.senseGPIOPin or
-           old_enableSensing != self.enableSensing or 
-           old_enableOnOffButton != self.enableOnOffButton or
-           old_onOffButtonGPIOPin != self.onOffButtonGPIOPin or
-           old_switchingMethod != self.switchingMethod):
+			old_onoffGPIOPin != self.onoffGPIOPin or
+			old_senseGPIOPin != self.senseGPIOPin or
+			old_enableSensing != self.enableSensing or 
+			old_enableOnOffButton != self.enableOnOffButton or
+			old_onOffButtonGPIOPin != self.onOffButtonGPIOPin or
+			old_switchingMethod != self.switchingMethod):
             self._configure_gpio()
+
+			if self.enableOnOffButton:
+				try:
+					GPIO.add_event_detect(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.RISING, callback=self.toggle_psu, bouncetime=500) 
+				except (RuntimeError, ValueError) as e:
+					self._logger.error(e)
 
         self._start_idle_timer()
 

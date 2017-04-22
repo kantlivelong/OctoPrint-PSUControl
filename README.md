@@ -31,8 +31,10 @@ Install the plugin using Plugin Manager from Settings
 &nbsp;&nbsp;&nbsp;&nbsp; The specified GPIO pin will send a 3.3v signal when turning the power supply on and 0v when off. ATX power supplies can be switched on by grounding the PS_ON pin using a [NPN Transistor](https://en.wikipedia.org/wiki/Bipolar_junction_transistor). For "always on" power supplies use a relay to switch AC mains.
 
 ###### On/Off Button GPIO Pin
-&nbsp;&nbsp;&nbsp;&nbsp; This option is only required if you want to switch PSU on/off with an external Hardware Button that is connectet to a GPIO Pin. If you want to start your Printer without connecting to the OctoPrint Webinterface for printing quickly from SD-Card.
+&nbsp;&nbsp;&nbsp;&nbsp; This option is only required if you want to switch PSU on/off using a physical button connected to a GPIO pin.
+&nbsp;&nbsp;&nbsp;&nbsp; If you want to start your Printer without connecting to the OctoPrint Webinterface for printing quickly from SD-Card. You have to wire the button using a pull down resistor. The GPIO internal resistor is set to pull down mode.
 
+![Button with pull down resistor](rpi_pull_down.png?raw=true)
 
 ## Troubleshooting
 - **The power indicator is out of sync with the power supply state.**
