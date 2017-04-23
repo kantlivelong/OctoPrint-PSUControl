@@ -128,12 +128,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
         self._checkPSUTimer.start()
 
-        if self.enableOnOffButton:
-            try:
-                GPIO.add_event_detect(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.RISING, callback=self.toggle_psu, bouncetime=500) 
-            except (RuntimeError, ValueError) as e:
-                self._logger.error(e)
-
         self._start_idle_timer()
 
     def _gpio_board_to_bcm(self, pin):
@@ -204,6 +198,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             try:
                 GPIO.setup(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
                 self._configuredGPIOPins.append(self.onOffButtonGPIOPin)
+				GPIO.add_event_detect(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.RISING, callback=self.toggle_psu, bouncetime=500)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
     
@@ -478,12 +473,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             old_onOffButtonGPIOPin != self.onOffButtonGPIOPin or
             old_switchingMethod != self.switchingMethod):
             self._configure_gpio()
-
-            if self.enableOnOffButton:
-                try:
-                    GPIO.add_event_detect(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.RISING, callback=self.toggle_psu, bouncetime=500) 
-                except (RuntimeError, ValueError) as e:
-                    self._logger.error(e)
 
         self._start_idle_timer()
 
