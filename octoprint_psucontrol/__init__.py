@@ -393,7 +393,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if self.isPSUOn:
             self.turn_psu_off()
         else:
-            self.turn.psu_on()
+            self.turn_psu_on()
         
     def get_api_commands(self):
         return dict(
