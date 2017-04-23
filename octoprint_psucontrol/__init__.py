@@ -216,7 +216,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Configuring GPIO for pin %s" % self.onoffGPIOPin)
             try:
                 GPIO.setup(self._gpio_get_pin(self.onoffGPIOPin), GPIO.OUT)
-
                 self._configuredGPIOPins.append(self.onoffGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
@@ -388,7 +387,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             time.sleep(0.1)
             self.check_psu_state()
 
-    def toggle_psu(self):
+    def toggle_psu(self, pin):
         self._logger.debug("Toggling PSU")
 
         if self.isPSUOn:
@@ -426,7 +425,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             disconnectOnPowerOff = False,
             senseGPIOPin = 0,
             enableOnOffButton = False,
-            onOffGPIOPin = 0,
+            onOffButtonGPIOPin = 0,
             autoOn = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
             enablePowerOffWarningDialog = True,
@@ -460,7 +459,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self.enableOnOffButton = self._settings.get_boolean(["enableOnOffButton"])
-        self.onOffGPIOPin = self._settings.get_int(["onOffGPIOPin"])
+        self.onOffButtonGPIOPin = self._settings.get_int(["onOffButtonGPIOPin"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
