@@ -191,17 +191,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._configuredGPIOPins.append(self.senseGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
-        
-        if self.enableOnOffButton:
-            self._logger.info("Using physical Button to switch PSU on/off.")
-            self._logger.info("Configuring GPIO for pin %s" % self.onOffButtonGPIOPin)
-            try:
-                GPIO.setup(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-                self._configuredGPIOPins.append(self.onOffButtonGPIOPin)
-				GPIO.add_event_detect(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.RISING, callback=self.toggle_psu, bouncetime=500)
-            except (RuntimeError, ValueError) as e:
-                self._logger.error(e)
-    
+
         if self.switchingMethod == 'GCODE':
             self._logger.info("Using G-Code Commands for On/Off")
         elif self.switchingMethod == 'SYSTEM':
@@ -212,6 +202,16 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             try:
                 GPIO.setup(self._gpio_get_pin(self.onoffGPIOPin), GPIO.OUT)
                 self._configuredGPIOPins.append(self.onoffGPIOPin)
+            except (RuntimeError, ValueError) as e:
+                self._logger.error(e)
+
+        if self.enableOnOffButton:
+            self._logger.info("Using physical Button to switch PSU on/off.")
+            self._logger.info("Configuring GPIO for pin %s" % self.onOffButtonGPIOPin)
+            try:
+                GPIO.setup(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+                self._configuredGPIOPins.append(self.onOffButtonGPIOPin)
+                GPIO.add_event_detect(self._gpio_get_pin(self.onOffButtonGPIOPin), GPIO.RISING, callback=self.toggle_psu, bouncetime=500)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
 
