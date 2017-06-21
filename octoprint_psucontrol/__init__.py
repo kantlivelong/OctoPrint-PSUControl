@@ -46,6 +46,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.enableSensing = False
         self.disconnectOnPowerOff = False
         self.senseGPIOPin = 0
+        self.invertsenseGPIOPin = False
         self.isPSUOn = False
         self._noSensing_isPSUOn = False
         self._checkPSUTimer = None
@@ -90,6 +91,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self._logger.debug("senseGPIOPin: %s" % self.senseGPIOPin)
+
+        self.invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
+        self._logger.debug("invertsenseGPIOPin: %s" % self.invertsenseGPIOPin)
 
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self._logger.debug("autoOn: %s" % self.autoOn)
@@ -212,6 +216,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self.isPSUOn = True
             elif r==0:
                 self.isPSUOn = False
+
+            if self.invertsenseGPIOPin:
+                self.isPSUOn = not self.isPSUOn
         else:
             self.isPSUOn = self._noSensing_isPSUOn
         
