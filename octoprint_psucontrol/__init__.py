@@ -12,7 +12,7 @@ import RPi.GPIO as GPIO
 import time
 import threading
 import os
-from flask import make_response
+from flask import make_response, jsonify
 
 class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.TemplatePlugin,
@@ -366,7 +366,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def get_api_commands(self):
         return dict(
             turnPSUOn=[],
-            turnPSUOff=[]
+            turnPSUOff=[],
+            togglePSU=[],
+            getPSUState=[]
         )
 
     def on_api_command(self, command, data):
@@ -377,6 +379,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self.turn_psu_on()
         elif command == 'turnPSUOff':
             self.turn_psu_off()
+        elif command == 'togglePSU':
+            if self.isPSUOn:
+                self.turn_psu_off()
+            else:
+                self.turn_psu_on()
+        elif command == 'getPSUState':
+            return jsonify(isPSUOn=self.isPSUOn)
 
     def get_settings_defaults(self):
         return dict(
