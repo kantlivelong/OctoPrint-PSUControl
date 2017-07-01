@@ -86,6 +86,16 @@
             <input type="number" min="0" class="input-mini" data-bind="value: settings.plugins.psucontrol.senseGPIOPin"> <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.invertsenseGPIOPin"> Invert
         </div>
     </div>
+    <div class="control-group">
+        <label class="control-label">Pull-Up/Down State</label>
+        <div class="controls">
+            <select data-bind="value: settings.plugins.psucontrol.senseGPIOPinPUD">
+                <option value="OFF">Off</option>
+                <option value="PULL_UP">Internal Pull-Up</option>
+                <option value="PULL_DOWN">Internal Pull-Down</option>
+            </select>
+        </div>
+    </div>
     <!-- /ko -->
     <br />
 

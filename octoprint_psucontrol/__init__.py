@@ -47,6 +47,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.disconnectOnPowerOff = False
         self.senseGPIOPin = 0
         self.invertsenseGPIOPin = False
+        self.senseGPIOPinPUD = ''
         self.isPSUOn = False
         self._noSensing_isPSUOn = False
         self._checkPSUTimer = None
@@ -94,6 +95,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
         self._logger.debug("invertsenseGPIOPin: %s" % self.invertsenseGPIOPin)
+
+        self.senseGPIOPinPUD = self._settings.get(["senseGPIOPinPUD"])
+        self._logger.debug("senseGPIOPinPUD: %s" % self.senseGPIOPinPUD)
 
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self._logger.debug("autoOn: %s" % self.autoOn)
@@ -181,8 +185,16 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if self.enableSensing:
             self._logger.info("Using sensing to determine PSU on/off state.")
             self._logger.info("Configuring GPIO for pin %s" % self.senseGPIOPin)
+
+            if self.senseGPIOPinPUD == 'PULL_UP':
+                pudsenseGPIOPin = GPIO.PUD_UP
+            elif self.senseGPIOPinPUD == 'PULL_DOWN':
+                pudsenseGPIOPin = GPIO.PUD_DOWN
+            else:
+                pudsenseGPIOPin = GPIO.PUD_OFF
+    
             try:
-                GPIO.setup(self._gpio_get_pin(self.senseGPIOPin), GPIO.IN)
+                GPIO.setup(self._gpio_get_pin(self.senseGPIOPin), GPIO.IN, pull_up_down=pudsenseGPIOPin)
                 self._configuredGPIOPins.append(self.senseGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
@@ -205,6 +217,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         if self.enableSensing:
             self._logger.debug("Polling PSU state...")
+            new_isPSUOn = False
             r = 0
             try:
                 r = GPIO.input(self._gpio_get_pin(self.senseGPIOPin))
@@ -213,12 +226,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.debug("Result: %s" % r)
 
             if r==1:
-                self.isPSUOn = True
+                new_isPSUOn = True
             elif r==0:
-                self.isPSUOn = False
+                new_isPSUOn = False
 
             if self.invertsenseGPIOPin:
-                self.isPSUOn = not self.isPSUOn
+                new_isPSUOn = not new_isPSUOn
+
+            self.isPSUOn = new_isPSUOn
         else:
             self.isPSUOn = self._noSensing_isPSUOn
         
@@ -400,6 +415,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             disconnectOnPowerOff = False,
             senseGPIOPin = 0,
             invertsenseGPIOPin = False,
+            senseGPIOPinPUD = 'OFF',
             autoOn = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
             enablePowerOffWarningDialog = True,
@@ -414,6 +430,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         old_onoffGPIOPin = self.onoffGPIOPin
         old_enableSensing = self.enableSensing
         old_senseGPIOPin = self.senseGPIOPin
+        old_invertsenseGPIOPin = self.invertsenseGPIOPin
+        old_senseGPIOPinPUD = self.senseGPIOPinPUD
         old_switchingMethod = self.switchingMethod
         
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
@@ -431,6 +449,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self.invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
+        self.senseGPIOPinPUD = self._settings.get(["senseGPIOPinPUD"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
@@ -445,6 +464,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
            old_onoffGPIOPin != self.onoffGPIOPin or
            old_senseGPIOPin != self.senseGPIOPin or
            old_enableSensing != self.enableSensing or
+           old_invertsenseGPIOPin != self.invertsenseGPIOPin or
+           old_senseGPIOPinPUD != self.senseGPIOPinPUD or
            old_switchingMethod != self.switchingMethod):
             self._configure_gpio()
 
