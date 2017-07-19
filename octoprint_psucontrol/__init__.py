@@ -235,10 +235,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if self.enableSensing:
             self._logger.debug("Polling PSU state...")
             if self.sensingMethod == 'GCODE':
-                print(
-                    'command response',
-                    self._printer.commands(
-                        self.senseGCodeCommand))
+                # TODO: actual implementation
+                print('command response', self._printer.commands(self.senseGCodeCommand))
             elif self.sensingMethod == 'GPIO':
                 r = 0
                 try:
@@ -449,6 +447,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             invertonoffGPIOPin = False,
             onGCodeCommand = 'M80',
             offGCodeCommand = 'M81',
+            senseGCodeCommand = 'M80 S',
             onSysCommand = '',
             offSysCommand = '',
             enablePseudoOnOff = False,
