@@ -13,6 +13,14 @@ import time
 import threading
 import os
 from flask import make_response, jsonify
+import re
+
+# a list of case insensitive values that are considered as a 'on'
+# state when parsing GCODE power state query response
+GCODE_POWER_SENSE_ON_STATES = ['1', 'on', 'true']
+# the regex group name to be used for GCODE power sensing that hold that
+# response power state
+GCODE_POWER_SENSE_REGEX_GROUP = 'power_status'
 
 class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.TemplatePlugin,
@@ -32,7 +40,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.invertonoffGPIOPin = False
         self.onGCodeCommand = ''
         self.offGCodeCommand = ''
-        self.senseGCodeCommand = ''
+        self.senseGCodeCommand = None
+        self.senseGCodeResponseRegex = '^PS:(?P<power_status>[10])$'
         self.onSysCommand = ''
         self.offSysCommand = ''
         self.enablePseudoOnOff = False
@@ -58,6 +67,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._waitForHeaters = False
         self._skipIdleTimer = False
         self._configuredGPIOPins = []
+
+        self.senseGCodeResponseRegexCompiled = None
 
     def on_settings_initialized(self):
         self.GPIOMode = self._settings.get(["GPIOMode"])
@@ -140,6 +151,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._configure_gpio()
 
+        self._configure_gcode_sensing()
+
         self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
         self._checkPSUTimer.start()
 
@@ -200,9 +213,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         if self.enableSensing:
             self._logger.info("Using sensing to determine PSU on/off state.")
-            if self.sensingMethod == 'GCODE':
-                self._logger.info("Using G-Code Commands for Sensing")
-            elif self.sensingMethod == 'GPIO':
+            if self.sensingMethod == 'GPIO':
                 self._logger.info(
                     "Configuring GPIO for pin %s" %
                     self.senseGPIOPin)
@@ -229,14 +240,36 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
 
+
+
+    def _configure_gcode_sensing(self):
+        """Conditionally enable some hooks."""
+
+        if self.sensingMethod == 'GCODE':
+            self._logger.info("Using G-Code Commands for Sensing")
+
+            if not all([self.senseGCodeCommand, self.senseGCodeResponseRegex]):
+                self._logger.error('Invalid configuration for G-Code sensing, disabling G-Code sensing.')
+                self.sensingMethod = ''
+                return
+
+            self._logger.debug("GCODE sense command: %s, regex parser: %s",
+                self.senseGCodeCommand, self.senseGCodeResponseRegex)
+
+            # precompile sensing detection regex
+            self.senseGCodeResponseRegexCompiled = re.compile(self.senseGCodeResponseRegex)
+
+
     def check_psu_state(self):
-        old_isPSUOn = self.isPSUOn
+        new_state = None
 
         if self.enableSensing:
             self._logger.debug("Polling PSU state...")
             if self.sensingMethod == 'GCODE':
-                # TODO: actual implementation
-                print('command response', self._printer.commands(self.senseGCodeCommand))
+                # Send GCODE command to query power state. The response is intercepted
+                # asynchronously and sets the PSU state accordingly
+                self._logger.debug('Sending GCODE power state sensing command %s', self.senseGCodeCommand)
+                self._printer.commands(self.senseGCodeCommand)
             elif self.sensingMethod == 'GPIO':
                 r = 0
                 try:
@@ -246,11 +279,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Result: %s" % r)
 
                 if r == 1:
-                    self.isPSUOn = True
+                    new_state = True
                 elif r == 0:
-                    self.isPSUOn = False
+                    new_state = False
         else:
-            self.isPSUOn = self._noSensing_isPSUOn
+            new_state = self._noSensing_isPSUOn
+
+        if new_state is not None:
+            self.set_psu_state(new_state)
+
+    def set_psu_state(self, new_state):
+        """Set new PSU state, handle idle timer and emit event."""
+        old_isPSUOn = self.isPSUOn
+        self.isPSUOn = new_state
 
         self._logger.debug("isPSUOn: %s" % self.isPSUOn)
 
@@ -356,6 +397,29 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if skipQueuing:
                 return (None,)
 
+    def hook_gcode_received(self, comm, line, *args, **kwargs):
+        """Parse GCODE responses, find power status query responses and set power state acordingly."""
+
+        # only enable when preferred sensing method and setup is complete
+        if self.sensingMethod == 'GCODE' and self.senseGCodeResponseRegexCompiled:
+            # verify if incoming gcode is a power state response matching expected regex.
+            psu_response_match = self.senseGCodeResponseRegexCompiled.match(line)
+            if psu_response_match:
+                self._logger.debug("Received GCODE power sensing command response: %s", line)
+
+                # extract power state value from response and set power state
+                try:
+                    response_power_state_value = psu_response_match.groupdict()[GCODE_POWER_SENSE_REGEX_GROUP]
+                except KeyError:
+                    self._logger.error('failed to find power status value group %s in %s, please check regex',
+                        GCODE_POWER_SENSE_REGEX_GROUP, psu_response_match.groupdict())
+                else:
+                    new_state = bool(response_power_state_value.lower() in GCODE_POWER_SENSE_ON_STATES)
+                    self.set_psu_state(new_state)
+
+        # http://docs.octoprint.org/en/master/plugins/hooks.html#octoprint-comm-protocol-gcode-received
+        return line
+
     def turn_psu_on(self):
         if self.switchingMethod == 'GCODE' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
             self._logger.info("Switching PSU On")
@@ -447,14 +511,16 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             invertonoffGPIOPin = False,
             onGCodeCommand = 'M80',
             offGCodeCommand = 'M81',
+            sensingMethod = 'GCODE',
             senseGCodeCommand = 'M80 S',
+            senseGCodeResponseRegex = '^PS:(?P<power_status>[10])$',
             onSysCommand = '',
             offSysCommand = '',
             enablePseudoOnOff = False,
             pseudoOnGCodeCommand = 'M80',
             pseudoOffGCodeCommand = 'M81',
             postOnDelay = 0.0,
-            enableSensing = False,
+            enableSensing = True,
             disconnectOnPowerOff = False,
             senseGPIOPin = 0,
             autoOn = False,
@@ -580,5 +646,7 @@ def __plugin_load__():
     global __plugin_hooks__
     __plugin_hooks__ = {
         "octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.hook_gcode_queuing,
+        "octoprint.comm.protocol.gcode.received": __plugin_implementation__.hook_gcode_received,
         "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+
     }
