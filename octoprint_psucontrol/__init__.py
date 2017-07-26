@@ -68,6 +68,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._skipIdleTimer = False
         self._configuredGPIOPins = []
 
+        self.expectingGCodeSenseResponse = False
         self.senseGCodeResponseRegexCompiled = None
 
     def on_settings_initialized(self):
@@ -270,6 +271,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 # asynchronously and sets the PSU state accordingly
                 self._logger.debug('Sending GCODE power state sensing command %s', self.senseGCodeCommand)
                 self._printer.commands(self.senseGCodeCommand)
+                self.expectingGCodeSenseResponse = True
             elif self.sensingMethod == 'GPIO':
                 r = 0
                 try:
@@ -400,8 +402,22 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def hook_gcode_received(self, comm, line, *args, **kwargs):
         """Parse GCODE responses, find power status query responses and set power state acordingly."""
 
+        if self.sensingMethod == 'GCODE' and self.expectingGCodeSenseResponse:
+            try:
+                self.handle_gcode_sense()
+            except Exception:
+                self._logger.exception('unexpected exception in handling GCode sense response!')
+            finally:
+                self.expectingGCodeSenseResponse = False
+
+        # http://docs.octoprint.org/en/master/plugins/hooks.html#octoprint-comm-protocol-gcode-received
+        return line
+
+    def handle_gcode_sense(self):
+        """Detect if response is GCode sense response, parse and respond to content."""
+
         # only enable when preferred sensing method and setup is complete
-        if self.sensingMethod == 'GCODE' and self.senseGCodeResponseRegexCompiled:
+        if self.senseGCodeResponseRegexCompiled:
             # verify if incoming gcode is a power state response matching expected regex.
             psu_response_match = self.senseGCodeResponseRegexCompiled.match(line)
             if psu_response_match:
@@ -417,8 +433,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     new_state = bool(response_power_state_value.lower() in GCODE_POWER_SENSE_ON_STATES)
                     self.set_psu_state(new_state)
 
-        # http://docs.octoprint.org/en/master/plugins/hooks.html#octoprint-comm-protocol-gcode-received
-        return line
 
     def turn_psu_on(self):
         if self.switchingMethod == 'GCODE' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
