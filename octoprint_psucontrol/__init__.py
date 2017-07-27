@@ -41,6 +41,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.invertonoffGPIOPin = False
         self.onGCodeCommand = ''
         self.offGCodeCommand = ''
+        self.senseInterval = 5
         self.senseGCodeCommand = None
         self.senseGCodeResponseRegex = '^PS:(?P<power_status>[10])$'
         self.onSysCommand = ''
@@ -155,8 +156,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._configure_gcode_sensing()
 
-        self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
-        self._checkPSUTimer.start()
+        if self.senseInterval:
+            self._checkPSUTimer = RepeatedTimer(self.senseInterval,
+                                                self.check_psu_state, None, None, True)
+            self._checkPSUTimer.start()
 
         self._start_idle_timer()
 
