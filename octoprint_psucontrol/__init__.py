@@ -655,9 +655,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             )
         )
 
-	def on_event(self, event, payload):
+    def on_event(self, event, payload):
         """Check power state after connecting to printer."""
-		if event == Events.CONNECTED:
+        if event == Events.CONNECTED:
             self.check_psu_state()
 
 __plugin_name__ = "PSU Control"
