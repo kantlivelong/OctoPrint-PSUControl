@@ -14,6 +14,7 @@ import threading
 import os
 from flask import make_response, jsonify
 import re
+from octoprint.events import Events
 
 # a list of case insensitive values that are considered as a 'on'
 # state when parsing GCODE power state query response
