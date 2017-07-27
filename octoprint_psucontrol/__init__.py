@@ -404,7 +404,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         if self.sensingMethod == 'GCODE' and self.expectingGCodeSenseResponse:
             try:
-                self.handle_gcode_sense()
+                self.handle_gcode_sense(line)
             except Exception:
                 self._logger.exception('unexpected exception in handling GCode sense response!')
             finally:
@@ -413,7 +413,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         # http://docs.octoprint.org/en/master/plugins/hooks.html#octoprint-comm-protocol-gcode-received
         return line
 
-    def handle_gcode_sense(self):
+    def handle_gcode_sense(self, line):
         """Detect if response is GCode sense response, parse and respond to content."""
 
         # only enable when preferred sensing method and setup is complete
