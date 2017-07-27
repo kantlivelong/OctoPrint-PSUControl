@@ -26,7 +26,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.TemplatePlugin,
                    octoprint.plugin.AssetPlugin,
                    octoprint.plugin.SettingsPlugin,
-                   octoprint.plugin.SimpleApiPlugin):
+                   octoprint.plugin.SimpleApiPlugin,
+                   octoprint.plugin.EventHandlerPlugin):
 
     def __init__(self):
         self._pin_to_gpio_rev1 = [-1, -1, -1, 0, -1, 1, -1, 4, 14, -1, 15, 17, 18, 21, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
@@ -650,6 +651,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 pip="https://github.com/kantlivelong/OctoPrint-PSUControl/archive/{target_version}.zip"
             )
         )
+
+	def on_event(self, event, payload):
+        """Check power state after connecting to printer."""
+		if event == Events.CONNECTED:
+            self.check_psu_state()
 
 __plugin_name__ = "PSU Control"
 
