@@ -209,9 +209,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.debug("Result: %s" % r)
 
             if r==1:
-                self.isPSUOn = True
+                self.isPSUOn = not self.invertonoffGPIOPin
             elif r==0:
-                self.isPSUOn = False
+                self.isPSUOn = self.invertonoffGPIOPin
         else:
             self.isPSUOn = self._noSensing_isPSUOn
         
