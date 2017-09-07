@@ -118,6 +118,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self._logger.debug("autoOn: %s" % self.autoOn)
+
         self.autoOnServerBoot = self._settings.get_boolean(["autoOnServerBoot"])
         self._logger.debug("autoOnServerBoot: %s" % self.autoOnServerBoot)
 
