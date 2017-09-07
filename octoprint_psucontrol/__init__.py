@@ -38,7 +38,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.pseudoOffGCodeCommand = ''
         self.postOnDelay = 0.0
         self.autoOn = False
-		self.autoOnTriggerGCodeCommands = ''
+		self.autoOnServerBoot = False
+        self.autoOnTriggerGCodeCommands = ''
         self._autoOnTriggerGCodeCommandsArray = []
         self.enablePowerOffWarningDialog = True
         self.powerOffWhenIdle = False
@@ -118,8 +119,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self._logger.debug("autoOn: %s" % self.autoOn)
 
-#self.autoOnServerBoot = self._settings.get_boolean(["autoOnServerBoot"])
-#self._logger.debug("autoOnServerBoot: %s" % self.autoOnServerBoot)
+        self.autoOnServerBoot = self._settings.get_boolean(["autoOnServerBoot"])
+        self._logger.debug("autoOnServerBoot: %s" % self.autoOnServerBoot)
 
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
@@ -471,7 +472,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             invertsenseGPIOPin = False,
             senseGPIOPinPUD = '',
             autoOn = False,
-            #autoOnServerBoot = False,
+            autoOnServerBoot = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M106,M109,M140,M190",
             enablePowerOffWarningDialog = True,
             powerOffWhenIdle = False,
@@ -509,7 +510,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
         self.senseGPIOPinPUD = self._settings.get(["senseGPIOPinPUD"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
-        #self.autoOnServerBoot = self._settings.get_boolean(["autoOnServerBoot"])
+        self.autoOnServerBoot = self._settings.get_boolean(["autoOnServerBoot"])
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
         self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
