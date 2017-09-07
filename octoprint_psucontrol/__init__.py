@@ -149,6 +149,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._start_idle_timer()
 
+        if self.autoOnServerBoot == True:
+            self.turn_psu_on()
+
     def _gpio_board_to_bcm(self, pin):
         if GPIO.RPI_REVISION == 1:
             pin_to_gpio = self._pin_to_gpio_rev1
