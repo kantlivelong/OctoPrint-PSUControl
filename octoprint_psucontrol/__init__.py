@@ -149,7 +149,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._start_idle_timer()
 
-        if self.autoOn == 1 && self.autoOnServerBoot == 1:
+        if (self.autoOn == 1 and self.autoOnServerBoot == 1):
             self._logger.debug("Switching PSU On Using Auto On Server Boot")
             self.turn_psu_on()
 
