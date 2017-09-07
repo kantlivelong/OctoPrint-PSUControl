@@ -127,11 +127,13 @@
         </div>
     </div>
     <!-- ko if: settings.plugins.psucontrol.autoOn() -->
-    	<div class="control-group">
+	<div class="control-group">
 		<label class="control-label">Turn PSU ON When Server Boots</label>
 		<div class="controls">
 			<input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOnServerBoot">
 		</div>
+	</div>
+	<div class="control-group">
         <label class="control-label">Trigger Commands</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.autoOnTriggerGCodeCommands">
