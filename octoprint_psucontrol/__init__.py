@@ -149,9 +149,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._start_idle_timer()
 
-#if self.autoOn == 1 and self.autoOnServerBoot == 1:
-#self._logger.debug("Switching PSU On Using Auto On Server Boot")
-#self.turn_psu_on()
+        if (self.autoOn == 1 and self.autoOnServerBoot == 1):
+            self._logger.debug("Switching PSU On Using Auto On Server Boot")
+            self.turn_psu_on()
 
     def _gpio_board_to_bcm(self, pin):
         if GPIO.RPI_REVISION == 1:
