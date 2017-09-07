@@ -120,20 +120,19 @@
 
     <h4>Power On Options</h4>
     <div class="control-group">
+		<div class="controls">
+			<label class="checkbox">
+			<input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOnServerBoot"> Turn PSU ON on server startup
+			</label>
+		</div>
+		</div>
         <div class="controls">
             <label class="checkbox">
-            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOn"> Automatically turn PSU ON
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOn"> Turn PSU ON with Gcode commands
             </label>
         </div>
     </div>
     <!-- ko if: settings.plugins.psucontrol.autoOn() -->
-	<div class="control-group">
-		<div class="controls">
-			<label class="checkbox">
-			<input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOnServerBoot"> Turn PSU ON When Server Boots
-			</label>
-		</div>
-	</div>
 	<div class="control-group">
         <label class="control-label">Trigger Commands</label>
         <div class="controls">
