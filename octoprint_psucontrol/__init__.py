@@ -10,9 +10,10 @@ from octoprint.server import user_permission
 from octoprint.util import RepeatedTimer
 import RPi.GPIO as GPIO
 import time
+import subprocess
 import threading
 import os
-from flask import make_response
+from flask import make_response, jsonify
 
 class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.TemplatePlugin,
@@ -33,6 +34,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.offGCodeCommand = ''
         self.onSysCommand = ''
         self.offSysCommand = ''
+        self.enablePseudoOnOff = False
+        self.pseudoOnGCodeCommand = ''
+        self.pseudoOffGCodeCommand = ''
         self.postOnDelay = 0.0
         self.autoOn = False
         self.autoOnTriggerGCodeCommands = ''
@@ -43,9 +47,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleIgnoreCommands = ''
         self._idleIgnoreCommandsArray = []
         self.idleTimeoutWaitTemp = 0
-        self.enableSensing = False
         self.disconnectOnPowerOff = False
+        self.sensingMethod = ''
         self.senseGPIOPin = 0
+        self.invertsenseGPIOPin = False
+        self.senseGPIOPinPUD = ''
+        self.senseSystemCommand = ''
         self.isPSUOn = False
         self._noSensing_isPSUOn = False
         self._checkPSUTimer = None
@@ -79,17 +86,39 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.offSysCommand = self._settings.get(["offSysCommand"])
         self._logger.debug("offSysCommand: %s" % self.offSysCommand)
 
+        self.enablePseudoOnOff = self._settings.get_boolean(["enablePseudoOnOff"])
+        self._logger.debug("enablePseudoOnOff: %s" % self.enablePseudoOnOff)
+
+        if self.enablePseudoOnOff and self.switchingMethod == 'GCODE':
+            self._logger.warning("Pseudo On/Off cannot be used in conjunction with GCODE switching.")
+            self.enablePseudoOnOff = False
+
+        self.pseudoOnGCodeCommand = self._settings.get(["pseudoOnGCodeCommand"])
+        self._logger.debug("pseudoOnGCodeCommand: %s" % self.pseudoOnGCodeCommand)
+
+        self.pseudoOffGCodeCommand = self._settings.get(["pseudoOffGCodeCommand"])
+        self._logger.debug("pseudoOffGCodeCommand: %s" % self.pseudoOffGCodeCommand)
+
         self.postOnDelay = self._settings.get_float(["postOnDelay"])
         self._logger.debug("postOnDelay: %s" % self.postOnDelay)
-
-        self.enableSensing = self._settings.get_boolean(["enableSensing"])
-        self._logger.debug("enableSensing: %s" % self.enableSensing)
 
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self._logger.debug("disconnectOnPowerOff: %s" % self.disconnectOnPowerOff)
 
+        self.sensingMethod = self._settings.get(["sensingMethod"])
+        self._logger.debug("sensingMethod: %s" % self.sensingMethod)
+
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
         self._logger.debug("senseGPIOPin: %s" % self.senseGPIOPin)
+
+        self.invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
+        self._logger.debug("invertsenseGPIOPin: %s" % self.invertsenseGPIOPin)
+
+        self.senseGPIOPinPUD = self._settings.get(["senseGPIOPinPUD"])
+        self._logger.debug("senseGPIOPinPUD: %s" % self.senseGPIOPinPUD)
+
+        self.senseSystemCommand = self._settings.get(["senseSystemCommand"])
+        self._logger.debug("senseSystemCommand: %s" % self.senseSystemCommand)
 
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self._logger.debug("autoOn: %s" % self.autoOn)
@@ -174,11 +203,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             else:
                 return
         
-        if self.enableSensing:
-            self._logger.info("Using sensing to determine PSU on/off state.")
+        if self.sensingMethod == 'GPIO':
+            self._logger.info("Using GPIO sensing to determine PSU on/off state.")
             self._logger.info("Configuring GPIO for pin %s" % self.senseGPIOPin)
+
+            if self.senseGPIOPinPUD == 'PULL_UP':
+                pudsenseGPIOPin = GPIO.PUD_UP
+            elif self.senseGPIOPinPUD == 'PULL_DOWN':
+                pudsenseGPIOPin = GPIO.PUD_DOWN
+            else:
+                pudsenseGPIOPin = GPIO.PUD_OFF
+    
             try:
-                GPIO.setup(self._gpio_get_pin(self.senseGPIOPin), GPIO.IN)
+                GPIO.setup(self._gpio_get_pin(self.senseGPIOPin), GPIO.IN, pull_up_down=pudsenseGPIOPin)
                 self._configuredGPIOPins.append(self.senseGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
@@ -191,7 +228,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Using GPIO for On/Off")
             self._logger.info("Configuring GPIO for pin %s" % self.onoffGPIOPin)
             try:
-                GPIO.setup(self._gpio_get_pin(self.onoffGPIOPin), GPIO.OUT)
+                if not self.invertonoffGPIOPin:
+                    initial_pin_output=GPIO.LOW
+                else:
+                    initial_pin_output=GPIO.HIGH
+                GPIO.setup(self._gpio_get_pin(self.onoffGPIOPin), GPIO.OUT, initial=initial_pin_output)
                 self._configuredGPIOPins.append(self.onoffGPIOPin)
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
@@ -199,8 +240,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def check_psu_state(self):
         old_isPSUOn = self.isPSUOn
 
-        if self.enableSensing:
+        if self.sensingMethod == 'GPIO':
             self._logger.debug("Polling PSU state...")
+
             r = 0
             try:
                 r = GPIO.input(self._gpio_get_pin(self.senseGPIOPin))
@@ -209,9 +251,28 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.debug("Result: %s" % r)
 
             if r==1:
-                self.isPSUOn = True
+                new_isPSUOn = True
             elif r==0:
-                self.isPSUOn = False
+                new_isPSUOn = False
+
+            if self.invertsenseGPIOPin:
+                new_isPSUOn = not new_isPSUOn
+
+            self.isPSUOn = new_isPSUOn
+        elif self.sensingMethod == 'SYSTEM':
+            new_isPSUOn = False
+
+            p = subprocess.Popen(self.senseSystemCommand, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            output = p.communicate()[0]
+            r = p.returncode
+            self._logger.debug("System command returned: %s" % r)
+
+            if r==0:
+                new_isPSUOn = True
+            elif r==1:
+                new_isPSUOn = False
+
+            self.isPSUOn = new_isPSUOn
         else:
             self.isPSUOn = self._noSensing_isPSUOn
         
@@ -294,7 +355,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             time.sleep(5)
 
     def hook_gcode_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+    	skipQueuing = False
+
         if gcode:
+            if self.enablePseudoOnOff:
+                if gcode == self.pseudoOnGCodeCommand:
+                    self.turn_psu_on()
+                    comm_instance._log("PSUControl: ok")
+                    skipQueuing = True
+                elif gcode == self.pseudoOffGCodeCommand:
+                    self.turn_psu_off()
+                    comm_instance._log("PSUControl: ok")
+                    skipQueuing = True
+
             if (not self.isPSUOn and self.autoOn and (gcode in self._autoOnTriggerGCodeCommandsArray)):
                 self._logger.info("Auto-On - Turning PSU On (Triggered by %s)" % gcode)
                 self.turn_psu_on()
@@ -303,6 +376,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 if not (gcode in self._idleIgnoreCommandsArray):
                     self._waitForHeaters = False
                     self._start_idle_timer()
+
+            if skipQueuing:
+                return (None,)
 
     def turn_psu_on(self):
         if self.switchingMethod == 'GCODE' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
@@ -326,7 +402,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 except (RuntimeError, ValueError) as e:
                     self._logger.error(e)
 
-            if not self.enableSensing:
+            if self.sensingMethod not in ('GPIO','SYSTEM'):
                 self._noSensing_isPSUOn = True
          
             time.sleep(0.1 + self.postOnDelay)
@@ -357,7 +433,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if self.disconnectOnPowerOff:
                 self._printer.disconnect()
                 
-            if not self.enableSensing:
+            if self.sensingMethod not in ('GPIO','SYSTEM'):
                 self._noSensing_isPSUOn = False
                         
             time.sleep(0.1)
@@ -366,7 +442,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def get_api_commands(self):
         return dict(
             turnPSUOn=[],
-            turnPSUOff=[]
+            turnPSUOff=[],
+            togglePSU=[],
+            getPSUState=[]
         )
 
     def on_api_command(self, command, data):
@@ -377,6 +455,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self.turn_psu_on()
         elif command == 'turnPSUOff':
             self.turn_psu_off()
+        elif command == 'togglePSU':
+            if self.isPSUOn:
+                self.turn_psu_off()
+            else:
+                self.turn_psu_on()
+        elif command == 'getPSUState':
+            return jsonify(isPSUOn=self.isPSUOn)
 
     def get_settings_defaults(self):
         return dict(
@@ -388,12 +473,18 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             offGCodeCommand = 'M81', 
             onSysCommand = '',
             offSysCommand = '',
+            enablePseudoOnOff = False,
+            pseudoOnGCodeCommand = 'M80',
+            pseudoOffGCodeCommand = 'M81',
             postOnDelay = 0.0,
-            enableSensing = False,
             disconnectOnPowerOff = False,
+            sensingMethod = '',
             senseGPIOPin = 0,
+            invertsenseGPIOPin = False,
+            senseGPIOPinPUD = '',
+            senseSystemCommand = '',
             autoOn = False,
-            autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M109,M140,M190",
+            autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M106,M109,M140,M190",
             enablePowerOffWarningDialog = True,
             powerOffWhenIdle = False,
             idleTimeout = 30,
@@ -404,10 +495,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def on_settings_save(self, data):
         old_GPIOMode = self.GPIOMode
         old_onoffGPIOPin = self.onoffGPIOPin
-        old_enableSensing = self.enableSensing
+        old_sensingMethod = self.sensingMethod
         old_senseGPIOPin = self.senseGPIOPin
+        old_invertsenseGPIOPin = self.invertsenseGPIOPin
+        old_senseGPIOPinPUD = self.senseGPIOPinPUD
         old_switchingMethod = self.switchingMethod
-        
+
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
         
         self.GPIOMode = self._settings.get(["GPIOMode"])
@@ -418,10 +511,16 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.offGCodeCommand = self._settings.get(["offGCodeCommand"])
         self.onSysCommand = self._settings.get(["onSysCommand"])
         self.offSysCommand = self._settings.get(["offSysCommand"])
+        self.enablePseudoOnOff = self._settings.get_boolean(["enablePseudoOnOff"])
+        self.pseudoOnGCodeCommand = self._settings.get(["pseudoOnGCodeCommand"])
+        self.pseudoOffGCodeCommand = self._settings.get(["pseudoOffGCodeCommand"])
         self.postOnDelay = self._settings.get_float(["postOnDelay"])
-        self.enableSensing = self._settings.get_boolean(["enableSensing"])
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
+        self.sensingMethod = self._settings.get(["sensingMethod"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
+        self.invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
+        self.senseGPIOPinPUD = self._settings.get(["senseGPIOPinPUD"])
+        self.senseSystemCommand = self._settings.get(["senseSystemCommand"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
@@ -431,18 +530,27 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.enablePowerOffWarningDialog = self._settings.get_boolean(["enablePowerOffWarningDialog"])
         self._idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
-        
+
+        #GCode switching and PseudoOnOff are not compatible.
+        if self.switchingMethod == 'GCODE' and self.enablePseudoOnOff:
+            self.enablePseudoOnOff = False
+            self._settings.set_boolean(["enablePseudoOnOff"], self.enablePseudoOnOff)
+            self._settings.save()
+
+
         if (old_GPIOMode != self.GPIOMode or
            old_onoffGPIOPin != self.onoffGPIOPin or
            old_senseGPIOPin != self.senseGPIOPin or
-           old_enableSensing != self.enableSensing or
+           old_sensingMethod != self.sensingMethod or
+           old_invertsenseGPIOPin != self.invertsenseGPIOPin or
+           old_senseGPIOPinPUD != self.senseGPIOPinPUD or
            old_switchingMethod != self.switchingMethod):
             self._configure_gpio()
 
         self._start_idle_timer()
 
     def get_settings_version(self):
-        return 2
+        return 3
 
     def on_settings_migrate(self, target, current=None):
         if current is None or current < 2:
@@ -469,6 +577,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.info("Migrating Setting: autoOnCommands={0} -> autoOnTriggerGCodeCommands={0}".format(cur_autoOnCommands))
                 self._settings.set(["autoOnTriggerGCodeCommands"], cur_autoOnCommands)
                 self._settings.remove(["autoOnCommands"])
+
+        if current < 3:
+            # v3 adds support for multiple sensing methods
+            cur_enableSensing = self._settings.get_boolean(["enableSensing"])
+            if cur_enableSensing is not None and cur_enableSensing:
+                self._logger.info("Migrating Setting: enableSensing=True -> sensingMethod=GPIO")
+                self._settings.set(["sensingMethod"], "GPIO")
+                self._settings.remove(["enableSensing"])
 
     def get_template_configs(self):
         return [
