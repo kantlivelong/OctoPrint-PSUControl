@@ -8,7 +8,6 @@ __copyright__ = "Copyright (C) 2017 Shawn Bruce - Released under terms of the AG
 import octoprint.plugin
 from octoprint.server import user_permission
 from octoprint.util import RepeatedTimer
-import RPi.GPIO as GPIO
 import time
 import subprocess
 import threading
@@ -22,6 +21,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.SimpleApiPlugin):
 
     def __init__(self):
+        try:
+            import RPi.GPIO as GPIO
+        except (ImportError, RuntimeError):
+            pass
+        
         self._pin_to_gpio_rev1 = [-1, -1, -1, 0, -1, 1, -1, 4, 14, -1, 15, 17, 18, 21, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
         self._pin_to_gpio_rev2 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
         self._pin_to_gpio_rev3 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, 5, -1, 6, 12, 13, -1, 19, 16, 26, 20, -1, 21 ]
@@ -143,7 +147,16 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         self._logger.debug("idleTimeoutWaitTemp: %s" % self.idleTimeoutWaitTemp)
 
-        self._configure_gpio()
+        if self.switchingMethod == 'GCODE':
+            self._logger.info("Using G-Code Commands for On/Off")
+        elif self.switchingMethod == 'SYSTEM':
+            self._logger.info("Using System Commands for On/Off")
+            
+        if self.sensingMethod == 'SYSTEM':
+            self._logger.info("Using System Command to determine PSU on/off state.")
+            
+        if self.switchingMethod == 'GPIO' or self.sensingMethod == 'GPIO':
+            self._configure_gpio()
 
         self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
         self._checkPSUTimer.start()
@@ -181,6 +194,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             return 0
 
     def _configure_gpio(self):
+        if GPIO is None:
+            self._logger.error("RPi.GPIO is required.")
+            return
+        
         self._logger.info("Running RPi.GPIO version %s" % GPIO.VERSION)
         if GPIO.VERSION < "0.6":
             self._logger.error("RPi.GPIO version 0.6.0 or greater required.")
@@ -220,11 +237,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             except (RuntimeError, ValueError) as e:
                 self._logger.error(e)
         
-        if self.switchingMethod == 'GCODE':
-            self._logger.info("Using G-Code Commands for On/Off")
-        elif self.switchingMethod == 'SYSTEM':
-            self._logger.info("Using System Commands for On/Off")
-        elif self.switchingMethod == 'GPIO':
+        if self.switchingMethod == 'GPIO':
             self._logger.info("Using GPIO for On/Off")
             self._logger.info("Configuring GPIO for pin %s" % self.onoffGPIOPin)
             try:
@@ -538,13 +551,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._settings.save()
 
 
-        if (old_GPIOMode != self.GPIOMode or
-           old_onoffGPIOPin != self.onoffGPIOPin or
-           old_senseGPIOPin != self.senseGPIOPin or
-           old_sensingMethod != self.sensingMethod or
-           old_invertsenseGPIOPin != self.invertsenseGPIOPin or
-           old_senseGPIOPinPUD != self.senseGPIOPinPUD or
-           old_switchingMethod != self.switchingMethod):
+        if ((old_GPIOMode != self.GPIOMode or
+             old_onoffGPIOPin != self.onoffGPIOPin or
+             old_senseGPIOPin != self.senseGPIOPin or
+             old_sensingMethod != self.sensingMethod or
+             old_invertsenseGPIOPin != self.invertsenseGPIOPin or
+             old_senseGPIOPinPUD != self.senseGPIOPinPUD or
+             old_switchingMethod != self.switchingMethod) and
+            (self.switchingMethod == 'GPIO' or self.sensingMethod == 'GPIO')):
             self._configure_gpio()
 
         self._start_idle_timer()
