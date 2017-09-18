@@ -20,3 +20,6 @@ See the [Wiki](https://github.com/kantlivelong/OctoPrint-PSUControl/wiki/Setting
  
 ## Troubleshooting
 See the [Wiki](https://github.com/kantlivelong/OctoPrint-PSUControl/wiki/Troubleshooting)
+
+## API
+See the [Wiki](https://github.com/kantlivelong/OctoPrint-PSUControl/wiki/API)
