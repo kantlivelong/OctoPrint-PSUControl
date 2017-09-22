@@ -7,7 +7,7 @@
             </label>
         </div>
     </div>
-    <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "GPIO" || settings.plugins.psucontrol.enableSensing() -->
+    <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "GPIO" || settings.plugins.psucontrol.sensingMethod() === "GPIO" -->
     <div class="control-group">
         <label class="control-label">GPIO Mode</label>
         <div class="controls">
@@ -96,15 +96,19 @@
 
     <h4>Sensing</h4>
     <div class="control-group">
+        <label class="control-label">Sensing Method</label>
         <div class="controls">
-            <label class="checkbox">
-            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.enableSensing"> Get PSU on/off state via GPIO (Recommended)
-            </label>
+            <select data-bind="value: settings.plugins.psucontrol.sensingMethod">
+                <option value="">Select Method...</option>
+                <option value="">Internal</option>
+                <option value="GPIO">GPIO Pin</option>
+                <option value="SYSTEM">System Command</option>
+            </select>
         </div>
     </div>
-    <!-- ko if: settings.plugins.psucontrol.enableSensing() -->
+    <!-- ko if: settings.plugins.psucontrol.sensingMethod() === "GPIO" -->
     <div class="control-group">
-        <label class="control-label">Sense GPIO Pin</label>
+        <label class="control-label">Sensing GPIO Pin</label>
         <div class="controls">
             <input type="number" min="0" class="input-mini" data-bind="value: settings.plugins.psucontrol.senseGPIOPin"> 
             <select data-bind="value: settings.plugins.psucontrol.senseGPIOPinPUD" class="input-medium">
@@ -113,6 +117,14 @@
                 <option value="PULL_DOWN">Pull-Down</option>
             </select>
             <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.invertsenseGPIOPin"> Invert
+        </div>
+    </div>
+    <!-- /ko -->
+    <!-- ko if: settings.plugins.psucontrol.sensingMethod() === "SYSTEM" -->
+    <div class="control-group">
+        <label class="control-label">Sensing System Command</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.senseSystemCommand">
         </div>
     </div>
     <!-- /ko -->
