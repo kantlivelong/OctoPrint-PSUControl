@@ -6,12 +6,10 @@ $(function() {
         self.settings = undefined;
         self.loginState = parameters[1];
         self.isPSUOn = ko.observable(undefined);
-        self.psu_indicator = undefined;
+        self.psu_indicator = $("#psucontrol_indicator");
 
         self.onAfterBinding = function() {
-            self.settings = self.global_settings.settings.plugins.psucontrol;
-
-            self.psu_indicator = $("#psucontrol_indicator");
+            self.settings = self.global_settings.settings.plugins.psucontrol;            
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
