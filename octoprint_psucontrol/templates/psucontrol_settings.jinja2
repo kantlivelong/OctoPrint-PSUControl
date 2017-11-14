@@ -7,7 +7,7 @@
             </label>
         </div>
     </div>
-    <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "GPIO" || settings.plugins.psucontrol.sensingMethod() === "GPIO" -->
+    <!-- ko if: hasGPIO() && (settings.plugins.psucontrol.switchingMethod() === "GPIO" || settings.plugins.psucontrol.sensingMethod() === "GPIO") -->
     <div class="control-group">
         <label class="control-label">GPIO Mode</label>
         <div class="controls">
@@ -29,7 +29,9 @@
                 <option value="">Select Method...</option>
                 <option value="GCODE">G-Code Command</option>
                 <option value="SYSTEM">System Command</option>
+                <!-- ko if: hasGPIO() -->
                 <option value="GPIO">GPIO Pin</option>
+                <!-- /ko -->
             </select>
         </div>
     </div>
@@ -101,7 +103,9 @@
             <select data-bind="value: settings.plugins.psucontrol.sensingMethod">
                 <option value="">Select Method...</option>
                 <option value="">Internal</option>
+                <!-- ko if: hasGPIO() -->
                 <option value="GPIO">GPIO Pin</option>
+                <!-- /ko -->
                 <option value="SYSTEM">System Command</option>
             </select>
         </div>

@@ -2,14 +2,15 @@ $(function() {
     function PSUControlViewModel(parameters) {
         var self = this;
 
-        self.global_settings = parameters[0];
-        self.settings = undefined;
+        self.settingsViewModel = parameters[0]
         self.loginState = parameters[1];
+        self.settings = undefined;
+        self.hasGPIO = ko.observable(undefined);
         self.isPSUOn = ko.observable(undefined);
         self.psu_indicator = $("#psucontrol_indicator");
 
-        self.onAfterBinding = function() {
-            self.settings = self.global_settings.settings.plugins.psucontrol;            
+        self.onBeforeBinding = function() {
+            self.settings = self.settingsViewModel.settings;
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
@@ -17,6 +18,7 @@ $(function() {
                 return;
             }
 
+            self.hasGPIO(data.hasGPIO);
             self.isPSUOn(data.isPSUOn);
 
             if (self.isPSUOn()) {
@@ -29,7 +31,7 @@ $(function() {
 
         self.togglePSU = function() {
             if (self.isPSUOn()) {
-                if (self.settings.enablePowerOffWarningDialog()) {
+                if (self.settings.plugins.psucontrol.enablePowerOffWarningDialog()) {
                     showConfirmationDialog({
                         message: "You are about to turn off the PSU.",
                         onproceed: function() {
@@ -72,6 +74,6 @@ $(function() {
     ADDITIONAL_VIEWMODELS.push([
         PSUControlViewModel,
         ["settingsViewModel", "loginStateViewModel"],
-        ["#navbar_plugin_psucontrol"]
+        ["#navbar_plugin_psucontrol", "#settings_plugin_psucontrol"]
     ]);
 });
