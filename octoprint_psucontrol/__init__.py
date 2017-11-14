@@ -593,7 +593,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
     def get_assets(self):
         return {
-            "js": ["js/psucontrol.js"]
+            "js": ["js/psucontrol.js"],
+            "less": ["less/psucontrol.less"],
+            "css": ["css/psucontrol.min.css"]
+
         } 
 
     def get_update_information(self):

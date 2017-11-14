@@ -20,9 +20,9 @@ $(function() {
             self.isPSUOn(data.isPSUOn);
 
             if (self.isPSUOn()) {
-                self.psu_indicator.css('color', '#00FF00');
+                self.psu_indicator.removeClass("off").addClass("on");
             } else {
-                self.psu_indicator.css('color', '#808080');
+                self.psu_indicator.removeClass("on").addClass("off");
             }
 
         };
