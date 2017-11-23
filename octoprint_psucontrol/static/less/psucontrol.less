@@ -1,9 +1,12 @@
+@psucontrol-on-color: #00FF00;
+@psucontrol-off-color: #808080;
+
 #psucontrol_indicator {
     &.on i {
-        color: #00FF00; 
+        color: @psucontrol-on-color; 
     }
     
     &.off i {
-        color: #808080; 
+        color: @psucontrol-off-color; 
     }
 }
