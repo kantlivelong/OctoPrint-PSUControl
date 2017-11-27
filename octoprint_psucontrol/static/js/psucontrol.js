@@ -13,6 +13,28 @@ $(function() {
             self.settings = self.settingsViewModel.settings;
         };
 
+        self.onStartup = function () {
+            self.isPSUOn.subscribe(function() {
+                if (self.isPSUOn()) {
+                    self.psu_indicator.removeClass("off").addClass("on");
+                } else {
+                    self.psu_indicator.removeClass("on").addClass("off");
+                }   
+            });
+            
+            $.ajax({
+                url: API_BASEURL + "plugin/psucontrol",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "getPSUState"
+                }),
+                contentType: "application/json; charset=UTF-8"
+            }).done(function(data) {
+                self.isPSUOn(data.isPSUOn);
+            });
+        }
+
         self.onDataUpdaterPluginMessage = function(plugin, data) {
             if (plugin != "psucontrol") {
                 return;
@@ -20,13 +42,6 @@ $(function() {
 
             self.hasGPIO(data.hasGPIO);
             self.isPSUOn(data.isPSUOn);
-
-            if (self.isPSUOn()) {
-                self.psu_indicator.removeClass("off").addClass("on");
-            } else {
-                self.psu_indicator.removeClass("on").addClass("off");
-            }
-
         };
 
         self.togglePSU = function() {
