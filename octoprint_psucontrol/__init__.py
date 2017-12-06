@@ -14,6 +14,60 @@ import threading
 import os
 from flask import make_response, jsonify
 
+try:
+    from octoprint.util import ResettableTimer
+except:
+    class ResettableTimer(threading.Thread):
+        def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
+            threading.Thread.__init__(self)
+            self._event = threading.Event()
+            self._mutex = threading.Lock()
+            self.is_reset = True
+
+            if args is None:
+                args = []
+            if kwargs is None:
+                kwargs = dict()
+
+            self.interval = interval
+            self.function = function
+            self.args = args
+            self.kwargs = kwargs
+            self.on_cancelled = on_cancelled
+            self.on_reset = on_reset
+
+
+        def run(self):
+            while self.is_reset:
+                with self._mutex:
+                    self.is_reset = False
+                self._event.wait(self.interval)
+
+            if not self._event.isSet():
+                self.function(*self.args, **self.kwargs)
+            with self._mutex:
+                self._event.set()
+
+        def cancel(self):
+            with self._mutex:
+                self._event.set()
+
+            if callable(self.on_cancelled):
+                self.on_cancelled()
+
+        def reset(self, interval=None):
+            with self._mutex:
+                if interval:
+                    self.interval = interval
+
+                self.is_reset = True
+                self._event.set()
+                self._event.clear()
+
+            if callable(self.on_reset):
+                self.on_reset()
+
+
 class PSUControl(octoprint.plugin.StartupPlugin,
                    octoprint.plugin.TemplatePlugin,
                    octoprint.plugin.AssetPlugin,
@@ -315,13 +369,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._stop_idle_timer()
         
         if self.powerOffWhenIdle and self.isPSUOn:
-            self._idleTimer = threading.Timer(self.idleTimeout * 60, self._idle_poweroff)
+            self._idleTimer = ResettableTimer(self.idleTimeout * 60, self._idle_poweroff)
             self._idleTimer.start()
 
     def _stop_idle_timer(self):
         if self._idleTimer:
             self._idleTimer.cancel()
             self._idleTimer = None
+
+    def _reset_idle_timer(self):
+        if self._idleTimer:
+            self._idleTimer.reset()
+        else:
+            self._start_idle_timer()
 
     def _idle_poweroff(self):
         if not self.powerOffWhenIdle:
@@ -401,7 +461,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if self.powerOffWhenIdle and self.isPSUOn and not self._skipIdleTimer:
                 if not (gcode in self._idleIgnoreCommandsArray):
                     self._waitForHeaters = False
-                    self._start_idle_timer()
+                    self._reset_idle_timer()
 
             if skipQueuing:
                 return (None,)
