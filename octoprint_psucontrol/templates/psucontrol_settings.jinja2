@@ -26,7 +26,6 @@
         <label class="control-label">Switching Method</label>
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.switchingMethod">
-                <option value="">Select Method...</option>
                 <option value="GCODE">G-Code Command</option>
                 <option value="SYSTEM">System Command</option>
                 <!-- ko if: hasGPIO() -->
@@ -101,8 +100,7 @@
         <label class="control-label">Sensing Method</label>
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.sensingMethod">
-                <option value="">Select Method...</option>
-                <option value="">Internal</option>
+                <option value="INTERNAL">Internal</option>
                 <!-- ko if: hasGPIO() -->
                 <option value="GPIO">GPIO Pin</option>
                 <!-- /ko -->

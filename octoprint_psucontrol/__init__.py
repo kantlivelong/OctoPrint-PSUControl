@@ -156,7 +156,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         elif self.switchingMethod == 'SYSTEM':
             self._logger.info("Using System Commands for On/Off")
             
-        if self.sensingMethod == '':
+        if self.sensingMethod == 'INTERNAL':
             self._logger.info("Using internal tracking for PSU on/off state.")
         elif self.sensingMethod == 'GPIO':
             self._logger.info("Using GPIO for tracking PSU on/off state.")
@@ -297,8 +297,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 new_isPSUOn = False
 
             self.isPSUOn = new_isPSUOn
-        else:
+        elif self.sensingMethod == 'INTERNAL':
             self.isPSUOn = self._noSensing_isPSUOn
+        else:
+            return
         
         self._logger.debug("isPSUOn: %s" % self.isPSUOn)
 
@@ -496,7 +498,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def get_settings_defaults(self):
         return dict(
             GPIOMode = 'BOARD',
-            switchingMethod = '',
+            switchingMethod = 'GCODE',
             onoffGPIOPin = 0,
             invertonoffGPIOPin = False,
             onGCodeCommand = 'M80', 
@@ -508,7 +510,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             pseudoOffGCodeCommand = 'M81',
             postOnDelay = 0.0,
             disconnectOnPowerOff = False,
-            sensingMethod = '',
+            sensingMethod = 'INTERNAL',
             senseGPIOPin = 0,
             invertsenseGPIOPin = False,
             senseGPIOPinPUD = '',
