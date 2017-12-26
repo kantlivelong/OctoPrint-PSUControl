@@ -7,7 +7,6 @@ __copyright__ = "Copyright (C) 2017 Shawn Bruce - Released under terms of the AG
 
 import octoprint.plugin
 from octoprint.server import user_permission
-from octoprint.util import RepeatedTimer
 import time
 import subprocess
 import threading
@@ -115,11 +114,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.senseSystemCommand = ''
         self.isPSUOn = False
         self._noSensing_isPSUOn = False
-        self._checkPSUTimer = None
+        self._check_psu_state_thread = None
+        self._check_psu_state_event= threading.Event()
         self._idleTimer = None
         self._waitForHeaters = False
         self._skipIdleTimer = False
         self._configuredGPIOPins = []
+
 
     def on_settings_initialized(self):
         self.GPIOMode = self._settings.get(["GPIOMode"])
@@ -220,8 +221,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if self.switchingMethod == 'GPIO' or self.sensingMethod == 'GPIO':
             self._configure_gpio()
 
-        self._checkPSUTimer = RepeatedTimer(5.0, self.check_psu_state, None, None, True)
-        self._checkPSUTimer.start()
+        self._check_psu_state_thread = threading.Thread(target=self._check_psu_state)
+        self._check_psu_state_thread.daemon = True
+        self._check_psu_state_thread.start()
 
         self._start_idle_timer()
 
@@ -313,57 +315,64 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.error(e)
 
     def check_psu_state(self):
-        old_isPSUOn = self.isPSUOn
+        self._check_psu_state_event.set()
 
-        if self.sensingMethod == 'GPIO':
-            if not self._hasGPIO:
+    def _check_psu_state(self):
+        while True:
+            old_isPSUOn = self.isPSUOn
+
+            if self.sensingMethod == 'GPIO':
+                if not self._hasGPIO:
+                    return
+
+                self._logger.debug("Polling PSU state...")
+
+                r = 0
+                try:
+                    r = GPIO.input(self._gpio_get_pin(self.senseGPIOPin))
+                except (RuntimeError, ValueError) as e:
+                    self._logger.error(e)
+                self._logger.debug("Result: %s" % r)
+
+                if r==1:
+                    new_isPSUOn = True
+                elif r==0:
+                    new_isPSUOn = False
+
+                if self.invertsenseGPIOPin:
+                    new_isPSUOn = not new_isPSUOn
+
+                self.isPSUOn = new_isPSUOn
+            elif self.sensingMethod == 'SYSTEM':
+                new_isPSUOn = False
+
+                p = subprocess.Popen(self.senseSystemCommand, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                output = p.communicate()[0]
+                r = p.returncode
+                self._logger.debug("System command returned: %s" % r)
+
+                if r==0:
+                    new_isPSUOn = True
+                elif r==1:
+                    new_isPSUOn = False
+
+                self.isPSUOn = new_isPSUOn
+            elif self.sensingMethod == 'INTERNAL':
+                self.isPSUOn = self._noSensing_isPSUOn
+            else:
                 return
+            
+            self._logger.debug("isPSUOn: %s" % self.isPSUOn)
 
-            self._logger.debug("Polling PSU state...")
+            if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
+                self._start_idle_timer()
+            elif (old_isPSUOn != self.isPSUOn) and not self.isPSUOn:
+                self._stop_idle_timer()
 
-            r = 0
-            try:
-                r = GPIO.input(self._gpio_get_pin(self.senseGPIOPin))
-            except (RuntimeError, ValueError) as e:
-                self._logger.error(e)
-            self._logger.debug("Result: %s" % r)
+            self._plugin_manager.send_plugin_message(self._identifier, dict(hasGPIO=self._hasGPIO, isPSUOn=self.isPSUOn))
 
-            if r==1:
-                new_isPSUOn = True
-            elif r==0:
-                new_isPSUOn = False
-
-            if self.invertsenseGPIOPin:
-                new_isPSUOn = not new_isPSUOn
-
-            self.isPSUOn = new_isPSUOn
-        elif self.sensingMethod == 'SYSTEM':
-            new_isPSUOn = False
-
-            p = subprocess.Popen(self.senseSystemCommand, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-            output = p.communicate()[0]
-            r = p.returncode
-            self._logger.debug("System command returned: %s" % r)
-
-            if r==0:
-                new_isPSUOn = True
-            elif r==1:
-                new_isPSUOn = False
-
-            self.isPSUOn = new_isPSUOn
-        elif self.sensingMethod == 'INTERNAL':
-            self.isPSUOn = self._noSensing_isPSUOn
-        else:
-            return
-        
-        self._logger.debug("isPSUOn: %s" % self.isPSUOn)
-
-        if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
-            self._start_idle_timer()
-        elif (old_isPSUOn != self.isPSUOn) and not self.isPSUOn:
-            self._stop_idle_timer()
-
-        self._plugin_manager.send_plugin_message(self._identifier, dict(hasGPIO=self._hasGPIO, isPSUOn=self.isPSUOn))
+            self._check_psu_state_event.wait(5)
+            self._check_psu_state_event.clear()
 
     def _start_idle_timer(self):
         self._stop_idle_timer()
