@@ -346,10 +346,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             elif self.sensingMethod == 'SYSTEM':
                 new_isPSUOn = False
 
-                p = subprocess.Popen(self.senseSystemCommand, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
-                output = p.communicate()[0]
+                p = subprocess.Popen(self.senseSystemCommand, shell=True)
+                self._logger.debug("Sensing system command executed. PID=%s, Command=%s" % (p.pid, self.senseSystemCommand))
+                while p.poll() is None:
+                    time.sleep(0.1)
                 r = p.returncode
-                self._logger.debug("System command returned: %s" % r)
+                self._logger.debug("Sensing system command returned: %s" % r)
 
                 if r==0:
                     new_isPSUOn = True
@@ -483,8 +485,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._printer.commands(self.onGCodeCommand)
             elif self.switchingMethod == 'SYSTEM':
                 self._logger.debug("Switching PSU On Using SYSTEM: %s" % self.onSysCommand)
-                r = os.system(self.onSysCommand)
-                self._logger.debug("System command returned: %s" % r)
+
+                p = subprocess.Popen(self.onSysCommand, shell=True)
+                self._logger.debug("On system command executed. PID=%s, Command=%s" % (p.pid, self.onSysCommand))
+                while p.poll() is None:
+                    time.sleep(0.1)
+                r = p.returncode
+
+                self._logger.debug("On system command returned: %s" % r)
             elif self.switchingMethod == 'GPIO':
                 if not self._hasGPIO:
                     return
@@ -514,8 +522,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._printer.commands(self.offGCodeCommand)
             elif self.switchingMethod == 'SYSTEM':
                 self._logger.debug("Switching PSU Off Using SYSTEM: %s" % self.offSysCommand)
-                r = os.system(self.offSysCommand)
-                self._logger.debug("System command returned: %s" % r)
+
+                p = subprocess.Popen(self.offSysCommand, shell=True)
+                self._logger.debug("Off system command executed. PID=%s, Command=%s" % (p.pid, self.offSysCommand))
+                while p.poll() is None:
+                    time.sleep(0.1)
+                r = p.returncode
+
+                self._logger.debug("Off system command returned: %s" % r)
             elif self.switchingMethod == 'GPIO':
                 if not self._hasGPIO:
                     return
