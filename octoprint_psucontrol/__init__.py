@@ -389,9 +389,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._idleTimer = None
 
     def _reset_idle_timer(self):
-        if self._idleTimer:
-            self._idleTimer.reset()
-        else:
+        try:
+            if self._idleTimer.is_alive():
+                self._idleTimer.reset()
+            else:
+                raise Exception()
+        except:
             self._start_idle_timer()
 
     def _idle_poweroff(self):
