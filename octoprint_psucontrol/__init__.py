@@ -539,11 +539,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 time.sleep(0.1 + self.autoConnectWaitTimeout)
                 self._logger.debug("Connect after Sleep")
                 if self.autoConnectPort == '':
-                    self.autoConnectPort = NONE
+                    self.autoConnectPort = None
                 if self.autoConnectBaudrate == '':
-                    self.autoConnectBaudrate = NONE
+                    self.autoConnectBaudrate = None
                 if self.autoConnectPrinterProfile == '':
-                    self.autoConnectPrinterProfile = NONE
+                    self.autoConnectPrinterProfile = None
                 self._printer.connect(self.autoConnectPort,self.autoConnectBaudrate,self.autoConnectPrinterProfile)
             time.sleep(0.1 + self.postOnDelay)
             self.check_psu_state()
