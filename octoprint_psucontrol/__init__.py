@@ -108,7 +108,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleTimeoutWaitTemp = 0
         self.disconnectOnPowerOff = False
         self.autoConnectOnPowerON = False
-        self.autoConnectWaitTimeout = 15
+        self.autoConnectWaitTimeout = 0.0
         self.autoConnectPort = ''
         self.autoConnectBaudrate = ''
         self.autoConnectPrinterProfile = ''
@@ -174,7 +174,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.autoConnectOnPowerON = self._settings.get_boolean(["autoConnectOnPowerON"])
         self._logger.debug("autoConnectOnPowerON: %s" % self.autoConnectOnPowerON)
 
-        self.autoConnectWaitTimeout = self._settings.get(["autoConnectWaitTimeout"])
+        self.autoConnectWaitTimeout = self._settings.get_float(["autoConnectWaitTimeout"])
         self._logger.debug("autoConnectWaitTimeout: %s" % self.autoConnectWaitTimeout)
 
         self.autoConnectPort = self._settings.get(["autoConnectPort"])
