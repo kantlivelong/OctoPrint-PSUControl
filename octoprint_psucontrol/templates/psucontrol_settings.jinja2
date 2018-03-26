@@ -151,11 +151,11 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoConnect"> Automatically connect Printer
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoConnectOnPowerON"> Automatically connect Printer
             </label>
         </div>
     </div>
-    <!-- ko if: settings.plugins.psucontrol.autoConnect() -->
+    <!-- ko if: settings.plugins.psucontrol.autoConnectOnPowerON() -->
     <div class="control-group">
         <label class="control-label">Port</label>
         <div class="controls">
@@ -174,19 +174,20 @@
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.autoConnectPrinterProfile">
         </div>
     </div>
-    <!-- /ko -->
-
-
+    
+    
     <div class="control-group">
-        <label class="control-label">Post Connect Delay</label>
+        <label class="control-label">Pre Connect Delay</label>
         <div class="controls">
             <div class="input-append">
-                <input type="number" min="0" step="0.1" class="input-mini text-right" data-bind="value: settings.plugins.psucontrol.postConnectDelay">
+                <input type="number" min="0" step="0.1" class="input-mini text-right" data-bind="value: settings.plugins.psucontrol.autoConnectWaitTimeout">
                 <span class="add-on">sec</span>
             </div>
         </div>
     </div>  
+    <!-- /ko -->
     <br />
+    
 
 
     <div class="control-group">
