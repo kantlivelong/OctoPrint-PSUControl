@@ -418,15 +418,26 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._waitForHeaters = True
         heaters = self._printer.get_current_temperatures()
         
-        for heater in heaters.keys():
-            if float(heaters.get(heater)["target"]) != 0:
+        for heater, entry in heaters.items():
+            target = entry.get("target")
+            if target is None:
+                # heater doesn't exist in fw
+                continue
+
+            try:
+                temp = float(target)
+            except ValueError:
+                # not a float for some reason, skip it
+                continue
+
+            if temp != 0:
                 self._logger.info("Turning off heater: %s" % heater)
                 self._skipIdleTimer = True
                 self._printer.set_temperature(heater, 0)
                 self._skipIdleTimer = False
             else:
                 self._logger.debug("Heater %s already off." % heater)
-        
+
         while True:
             if not self._waitForHeaters:
                 return False
@@ -435,11 +446,21 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             
             highest_temp = 0
             heaters_above_waittemp = []
-            for heater in heaters.keys():
-                if heater == 'bed':
+            for heater, entry in heaters.items():
+                if not heater.startswith("tool"):
                     continue
-                
-                temp = float(heaters.get(heater)["actual"])
+
+                actual = entry.get("actual")
+                if actual is None:
+                    # heater doesn't exist in fw
+                    continue
+
+                try:
+                    temp = float(actual)
+                except ValueError:
+                    # not a float for some reason, skip it
+                    continue
+
                 self._logger.debug("Heater %s = %sC" % (heater,temp))
                 if temp > self.idleTimeoutWaitTemp:
                     heaters_above_waittemp.append(heater)
