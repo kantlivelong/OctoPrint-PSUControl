@@ -590,6 +590,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             getPSUState=[]
         )
 
+    def on_api_get(self, request):
+        return self.on_api_command("getPSUState", [])
+
     def on_api_command(self, command, data):
         if not user_permission.can():
             return make_response("Insufficient rights", 403)
