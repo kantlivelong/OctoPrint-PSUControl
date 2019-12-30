@@ -702,7 +702,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         return 3
 
     def on_settings_migrate(self, target, current=None):
-        if current is None or current < 2:
+        if current is None:
+            current = 0
+
+        if current < 2:
             # v2 changes names of settings variables to accomidate system commands.
             cur_switchingMethod = self._settings.get(["switchingMethod"])
             if cur_switchingMethod is not None and cur_switchingMethod == "COMMAND":
