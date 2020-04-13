@@ -545,13 +545,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if self.sensingMethod not in ('GPIO','SYSTEM'):
                 self._noSensing_isPSUOn = True
          
-            time.sleep(0.1)
+            time.sleep(0.1 + self.postOnDelay)
 
             if self.afterOnGCodeCommands:
                 for command in self._afterOnGCodeCommandsArray:
                     self._printer.commands(command)
-            
-            time.sleep(0.1 + self.postOnDelay)
+
             self.check_psu_state()
         
     def turn_psu_off(self):
