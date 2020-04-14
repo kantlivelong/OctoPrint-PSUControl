@@ -9,9 +9,7 @@ Supports Commands (G-Code or System) or GPIO to switch power supply on/off.
  
  
 ## Setup
-
 Install the plugin using Plugin Manager from Settings
- 
  
 ## Settings
 See the [Wiki](https://github.com/kantlivelong/OctoPrint-PSUControl/wiki/Settings)
@@ -21,3 +19,9 @@ See the [Wiki](https://github.com/kantlivelong/OctoPrint-PSUControl/wiki/Trouble
 
 ## API
 See the [Wiki](https://github.com/kantlivelong/OctoPrint-PSUControl/wiki/API)
+
+## Support
+Help can be found at the [OctoPrint Community Forums](https://community.octoprint.org)
+
+## Feature Requests
+[![Feature Requests](https://feathub.com/kantlivelong/OctoPrint-PSUControl?format=svg)](https://feathub.com/kantlivelong/OctoPrint-PSUControl)

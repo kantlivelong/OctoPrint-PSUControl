@@ -1,22 +1,30 @@
 <!--
 READ THE FOLLOWING FIRST:
 
-If not already done, please read the Wiki: https://github.com/kantlivelong/OctoPrint-PSUControl/wiki
+If not already done, please read the Wiki: 
+https://github.com/kantlivelong/OctoPrint-PSUControl/wiki
 
-This is a bug and feature tracker, please only use it to report bugs
-or request features within OctoPrint-PSUControl.
+This is a bug tracker, please only use it to report bugs
+within OctoPrint-PSUControl.
 
 Do not seek support here ("I need help with ...", "I have a
 question ..."), that belongs on the community forum at 
-discourse.octoprint.org, NOT here.
+https://community.octoprint.org
+All support related questions will be closed.
 
-Mark requests with a "[Request]" prefix in the title please. For bug
-reports fully fill out the bug reporting template.
+Feature requests should be made at:
+https://feathub.com/kantlivelong/OctoPrint-PSUControl
 
 When reporting a bug do NOT delete ANY lines from the template.
 
 Make sure any bug you want to report is still present with the CURRENT
 OctoPrint-PSUControl version.
+
+To summarize:
+Wiki:             https://github.com/kantlivelong/OctoPrint-PSUControl/wiki
+Support:          https://community.octoprint.org
+Feature Requests: https://feathub.com/kantlivelong/OctoPrint-PSUControl
+Bug Reports:      Here
 
 Thanks!
 -->
