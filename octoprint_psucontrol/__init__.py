@@ -553,12 +553,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def after_psu_on_delay(self):
+            if self.postOnConnect:
+                self._printer.connect()
+
             if self.afterOnGCodeCommands:
                 for command in self._afterOnGCodeCommandsArray:
                     self._printer.commands(command)
-
-            if self.postOnConnect:
-                self._printer.connect()
 
             self.check_psu_state()
 
