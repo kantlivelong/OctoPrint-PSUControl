@@ -582,6 +582,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             time.sleep(0.1)
             self.check_psu_state()
 
+    def get_psu_state(self):
+        isPSUOn=self.isPSUOn
+        return isPSUOn
+
     def get_api_commands(self):
         return dict(
             turnPSUOn=[],
@@ -768,12 +772,25 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             )
         )
 
+    def _register_custom_events(*args, **kwargs):
+        return ["psu_state_changed"]
+
 __plugin_name__ = "PSU Control"
 __plugin_pythoncompat__ = ">=2.7,<4"
 
 def __plugin_load__():
+
+    plugin = PSUControl()
+
     global __plugin_implementation__
-    __plugin_implementation__ = PSUControl()
+    __plugin_implementation__ = plugin
+
+    global __plugin_helpers__
+    __plugin_helpers__ = dict(
+        get_psu_state=plugin.get_psu_state,
+        turn_psu_on=plugin.turn_psu_on,
+        turn_psu_off=plugin.turn_psu_off
+    )
 
     global __plugin_hooks__
     __plugin_hooks__ = {
