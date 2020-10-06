@@ -374,7 +374,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if (old_isPSUOn != new_isPSUOn):
                 self._logger.debug("PSU state changed, firing psu_state_changed event.")
                 event = Events.PLUGIN_PSUCONTROL_PSU_STATE_CHANGED
-                self._event_bus.fire(event, payload=new_isPSUOn)
+                self._event_bus.fire(event, payload=dict(psu_state=new_isPSUOn))
 
             if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
                 self._start_idle_timer()
