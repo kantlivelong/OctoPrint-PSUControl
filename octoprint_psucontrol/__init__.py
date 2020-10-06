@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2017 Shawn Bruce - Released under terms of the AG
 
 import octoprint.plugin
 from octoprint.server import user_permission
+from octoprint.events import Events
 import time
 import subprocess
 import threading
@@ -369,6 +370,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 return
             
             self._logger.debug("isPSUOn: %s" % self.isPSUOn)
+
+            if (old_isPSUOn != new_isPSUOn):
+                self._logger.debug("PSU state changed, firing psu_state_changed event.")
+                event = Events.PLUGIN_PSUCONTROL_PSU_STATE_CHANGED
+                self._event_bus.fire(event, payload=new_isPSUOn)
 
             if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
                 self._start_idle_timer()
@@ -795,5 +801,6 @@ def __plugin_load__():
     global __plugin_hooks__
     __plugin_hooks__ = {
         "octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.hook_gcode_queuing,
-        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+        "octoprint.events.register_custom_events": __plugin_implementation__._register_custom_events
     }
