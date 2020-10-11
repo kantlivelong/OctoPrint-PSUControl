@@ -371,10 +371,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             
             self._logger.debug("isPSUOn: %s" % self.isPSUOn)
 
-            if (old_isPSUOn != new_isPSUOn):
+            if (old_isPSUOn != self.isPSUOn):
                 self._logger.debug("PSU state changed, firing psu_state_changed event.")
                 event = Events.PLUGIN_PSUCONTROL_PSU_STATE_CHANGED
-                self._event_bus.fire(event, payload=dict(psu_state=new_isPSUOn))
+                self._event_bus.fire(event, payload=dict(psu_state=self.isPSUOn))
 
             if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
                 self._start_idle_timer()
@@ -589,8 +589,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self.check_psu_state()
 
     def get_psu_state(self):
-        isPSUOn=self.isPSUOn
-        return isPSUOn
+        return self.isPSUOn
+        # if self.isPSUOn:
+        #     return True
+        # else:
+        #     return False
 
     def get_api_commands(self):
         return dict(
@@ -785,17 +788,14 @@ __plugin_name__ = "PSU Control"
 __plugin_pythoncompat__ = ">=2.7,<4"
 
 def __plugin_load__():
-
-    plugin = PSUControl()
-
     global __plugin_implementation__
-    __plugin_implementation__ = plugin
+    __plugin_implementation__ = PSUControl()
 
     global __plugin_helpers__
     __plugin_helpers__ = dict(
-        get_psu_state=plugin.get_psu_state,
-        turn_psu_on=plugin.turn_psu_on,
-        turn_psu_off=plugin.turn_psu_off
+        get_psu_state = __plugin_implementation__.get_psu_state,
+        turn_psu_on = __plugin_implementation__.turn_psu_on,
+        turn_psu_off = __plugin_implementation__.turn_psu_off
     )
 
     global __plugin_hooks__
