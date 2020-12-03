@@ -6,6 +6,7 @@ $(function() {
         self.loginState = parameters[1];
         self.settings = undefined;
         self.scripts_gcode_psucontrol_post_on = ko.observable(undefined);
+        self.scripts_gcode_psucontrol_pre_off = ko.observable(undefined);
         self.hasGPIO = ko.observable(undefined);
         self.isPSUOn = ko.observable(undefined);
         self.psu_indicator = $("#psucontrol_indicator");
@@ -16,16 +17,23 @@ $(function() {
 
         self.onSettingsShown = function () {
             self.scripts_gcode_psucontrol_post_on(self.settings.scripts.gcode["psucontrol_post_on"]());
+            self.scripts_gcode_psucontrol_pre_off(self.settings.scripts.gcode["psucontrol_pre_off"]());
         };
 
         self.onSettingsHidden = function () {
             self.settings.plugins.psucontrol.scripts_gcode_psucontrol_post_on = null;
+            self.settings.plugins.psucontrol.scripts_gcode_psucontrol_pre_off = null;
         };
 
         self.onSettingsBeforeSave = function () {
             if (self.scripts_gcode_psucontrol_post_on() != self.settings.scripts.gcode["psucontrol_post_on"]()) {
                 self.settings.plugins.psucontrol.scripts_gcode_psucontrol_post_on = self.scripts_gcode_psucontrol_post_on;
                 self.settings.scripts.gcode["psucontrol_post_on"](self.scripts_gcode_psucontrol_post_on());
+            }
+
+            if (self.scripts_gcode_psucontrol_pre_off() != self.settings.scripts.gcode["psucontrol_pre_off"]()) {
+                self.settings.plugins.psucontrol.scripts_gcode_psucontrol_pre_off = self.scripts_gcode_psucontrol_pre_off;
+                self.settings.scripts.gcode["psucontrol_pre_off"](self.scripts_gcode_psucontrol_pre_off());
             }
         };
 

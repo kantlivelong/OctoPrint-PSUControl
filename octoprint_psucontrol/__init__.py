@@ -212,6 +212,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if not "psucontrol_post_on" in scripts:
             self._settings.saveScript("gcode", "psucontrol_post_on", u'')
 
+        scripts = self._settings.listScripts("gcode")
+        if not "psucontrol_pre_off" in scripts:
+            self._settings.saveScript("gcode", "psucontrol_pre_off", u'')
+
         if self.switchingMethod == 'GCODE':
             self._logger.info("Using G-Code Commands for On/Off")
         elif self.switchingMethod == 'GPIO':
@@ -551,6 +555,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         
     def turn_psu_off(self):
         if self.switchingMethod == 'GCODE' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
+            self._printer.script("psucontrol_pre_off", must_be_set=False)
+            
             self._logger.info("Switching PSU Off")
             if self.switchingMethod == 'GCODE':
                 self._logger.debug("Switching PSU Off Using GCODE: %s" % self.offGCodeCommand)
@@ -689,6 +695,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if 'scripts_gcode_psucontrol_post_on' in data:
             script = data["scripts_gcode_psucontrol_post_on"]
             self._settings.saveScript("gcode", "psucontrol_post_on", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
+
+        if 'scripts_gcode_psucontrol_pre_off' in data:
+            script = data["scripts_gcode_psucontrol_pre_off"]
+            self._settings.saveScript("gcode", "psucontrol_pre_off", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
 
         #GCode switching and PseudoOnOff are not compatible.
         if self.switchingMethod == 'GCODE' and self.enablePseudoOnOff:
