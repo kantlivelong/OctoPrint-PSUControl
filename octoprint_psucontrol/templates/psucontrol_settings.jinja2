@@ -158,12 +158,6 @@
     </div>
     <!-- /ko -->
     <div class="control-group">
-        <label class="control-label">After PowerOn Commands</label>
-        <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.afterOnGCodeCommands">
-        </div>
-    </div>
-    <div class="control-group">
         <label class="control-label">Post On Delay</label>
         <div class="controls">
             <div class="input-append">
@@ -172,6 +166,12 @@
             </div>
         </div>
     </div>  
+    <div class="control-group">
+        <label class="control-label">Post On GCode Script</label>
+        <div class="controls">
+            <textarea rows="5" class="block" data-bind="value: scripts_gcode_psucontrol_post_on"></textarea>
+        </div>
+    </div>
     <br />
 
     <h4>Power Off Options</h4>

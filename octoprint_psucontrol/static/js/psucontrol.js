@@ -5,12 +5,28 @@ $(function() {
         self.settingsViewModel = parameters[0]
         self.loginState = parameters[1];
         self.settings = undefined;
+        self.scripts_gcode_psucontrol_post_on = ko.observable(undefined);
         self.hasGPIO = ko.observable(undefined);
         self.isPSUOn = ko.observable(undefined);
         self.psu_indicator = $("#psucontrol_indicator");
 
         self.onBeforeBinding = function() {
             self.settings = self.settingsViewModel.settings;
+        };
+
+        self.onSettingsShown = function () {
+            self.scripts_gcode_psucontrol_post_on(self.settings.scripts.gcode["psucontrol_post_on"]());
+        };
+
+        self.onSettingsHidden = function () {
+            self.settings.plugins.psucontrol.scripts_gcode_psucontrol_post_on = null;
+        };
+
+        self.onSettingsBeforeSave = function () {
+            if (self.scripts_gcode_psucontrol_post_on() != self.settings.scripts.gcode["psucontrol_post_on"]()) {
+                self.settings.plugins.psucontrol.scripts_gcode_psucontrol_post_on = self.scripts_gcode_psucontrol_post_on;
+                self.settings.scripts.gcode["psucontrol_post_on"](self.scripts_gcode_psucontrol_post_on());
+            }
         };
 
         self.onStartup = function () {

@@ -100,8 +100,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.autoOn = False
         self.autoOnTriggerGCodeCommands = ''
         self._autoOnTriggerGCodeCommandsArray = []
-        self.afterOnGCodeCommands = ''
-        self._afterOnGCodeCommandsArray = []
         self.enablePowerOffWarningDialog = True
         self.powerOffWhenIdle = False
         self.idleTimeout = 0
@@ -194,10 +192,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
         self._logger.debug("autoOnTriggerGCodeCommands: %s" % self.autoOnTriggerGCodeCommands)
 
-        self.afterOnGCodeCommands = self._settings.get(["afterOnGCodeCommands"])
-        self._afterOnGCodeCommandsArray = self.afterOnGCodeCommands.split(',')
-        self._logger.debug("afterOnGCodeCommands: %s" % self.afterOnGCodeCommands)
-
         self.enablePowerOffWarningDialog = self._settings.get_boolean(["enablePowerOffWarningDialog"])
         self._logger.debug("enablePowerOffWarningDialog: %s" % self.enablePowerOffWarningDialog)
 
@@ -213,6 +207,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         self._logger.debug("idleTimeoutWaitTemp: %s" % self.idleTimeoutWaitTemp)
+
+        scripts = self._settings.listScripts("gcode")
+        if not "psucontrol_post_on" in scripts:
+            self._settings.saveScript("gcode", "psucontrol_post_on", u'')
 
         if self.switchingMethod == 'GCODE':
             self._logger.info("Using G-Code Commands for On/Off")
@@ -547,11 +545,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
          
             time.sleep(0.1 + self.postOnDelay)
 
-            if self.afterOnGCodeCommands:
-                for command in self._afterOnGCodeCommandsArray:
-                    self._printer.commands(command)
-
             self.check_psu_state()
+
+            self._printer.script("psucontrol_post_on", must_be_set=False)
         
     def turn_psu_off(self):
         if self.switchingMethod == 'GCODE' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
@@ -643,7 +639,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             senseSystemCommand = '',
             autoOn = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M106,M109,M140,M190",
-            afterOnGCodeCommands = '',
             enablePowerOffWarningDialog = True,
             powerOffWhenIdle = False,
             idleTimeout = 30,
@@ -684,14 +679,16 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
-        self.afterOnGCodeCommands = self._settings.get(["afterOnGCodeCommands"])
-        self._afterOnGCodeCommandsArray = self.afterOnGCodeCommands.split(',')
         self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
         self.idleTimeout = self._settings.get_int(["idleTimeout"])
         self.idleIgnoreCommands = self._settings.get(["idleIgnoreCommands"])
         self.enablePowerOffWarningDialog = self._settings.get_boolean(["enablePowerOffWarningDialog"])
         self._idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
+
+        if 'scripts_gcode_psucontrol_post_on' in data:
+            script = data["scripts_gcode_psucontrol_post_on"]
+            self._settings.saveScript("gcode", "psucontrol_post_on", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
 
         #GCode switching and PseudoOnOff are not compatible.
         if self.switchingMethod == 'GCODE' and self.enablePseudoOnOff:
