@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2017 Shawn Bruce - Released under terms of the AG
 
 import octoprint.plugin
 from octoprint.server import user_permission
+from octoprint.events import Events
 import time
 import subprocess
 import threading
@@ -68,10 +69,11 @@ except:
 
 
 class PSUControl(octoprint.plugin.StartupPlugin,
-                   octoprint.plugin.TemplatePlugin,
-                   octoprint.plugin.AssetPlugin,
-                   octoprint.plugin.SettingsPlugin,
-                   octoprint.plugin.SimpleApiPlugin):
+                 octoprint.plugin.TemplatePlugin,
+                 octoprint.plugin.AssetPlugin,
+                 octoprint.plugin.SettingsPlugin,
+                 octoprint.plugin.SimpleApiPlugin,
+                 octoprint.plugin.EventHandlerPlugin):
 
     def __init__(self):
         try:
@@ -381,7 +383,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             elif (old_isPSUOn != self.isPSUOn) and not self.isPSUOn:
                 self._stop_idle_timer()
 
-            self._plugin_manager.send_plugin_message(self._identifier, dict(hasGPIO=self._hasGPIO, isPSUOn=self.isPSUOn))
+            self._plugin_manager.send_plugin_message(self._identifier, dict(isPSUOn=self.isPSUOn))
 
             self._check_psu_state_event.wait(self.sensePollingInterval)
             self._check_psu_state_event.clear()
@@ -592,6 +594,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                         
             time.sleep(0.1)
             self.check_psu_state()
+
+    def on_event(self, event, payload):
+        if event == Events.CLIENT_OPENED:
+            self._plugin_manager.send_plugin_message(self._identifier, dict(hasGPIO=self._hasGPIO, isPSUOn=self.isPSUOn))
+            return
 
     def get_api_commands(self):
         return dict(
