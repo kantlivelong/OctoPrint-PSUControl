@@ -6,7 +6,7 @@ import setuptools
 plugin_identifier = "psucontrol"
 plugin_package = "octoprint_%s" % plugin_identifier
 plugin_name = "OctoPrint-PSUControl"
-plugin_version = "0.1.9"
+plugin_version = "0.1.10"
 plugin_description = "Control ATX/AUX power supply."
 plugin_author = "Shawn Bruce"
 plugin_author_email = "kantlivelong@gmail.com"
