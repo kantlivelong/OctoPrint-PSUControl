@@ -166,6 +166,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.postOnDelay = self._settings.get_float(["postOnDelay"])
         self._logger.debug("postOnDelay: %s" % self.postOnDelay)
 
+        self.connectOnPowerOn = self._settings.get_boolean(["connectOnPowerOn"])
+        self._logger.debug("connectOnPowerOn: %s" % self.connectOnPowerOn)
+
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self._logger.debug("disconnectOnPowerOff: %s" % self.disconnectOnPowerOff)
 
@@ -553,6 +556,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
             self.check_psu_state()
 
+            if self.connectOnPowerOn and self._printer.is_closed_or_error():
+                self._printer.connect()
+
             self._printer.script("psucontrol_post_on", must_be_set=False)
         
     def turn_psu_off(self):
@@ -643,6 +649,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             pseudoOnGCodeCommand = 'M80',
             pseudoOffGCodeCommand = 'M81',
             postOnDelay = 0.0,
+            connectOnPowerOn = False,
             disconnectOnPowerOff = False,
             sensingMethod = 'INTERNAL',
             senseGPIOPin = 0,
@@ -682,6 +689,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.pseudoOnGCodeCommand = self._settings.get(["pseudoOnGCodeCommand"])
         self.pseudoOffGCodeCommand = self._settings.get(["pseudoOffGCodeCommand"])
         self.postOnDelay = self._settings.get_float(["postOnDelay"])
+        self.connectOnPowerOn = self._settings.get_boolean(["connectOnPowerOn"])
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self.sensingMethod = self._settings.get(["sensingMethod"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
