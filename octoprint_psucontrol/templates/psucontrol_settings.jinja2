@@ -166,6 +166,19 @@
             </div>
         </div>
     </div>  
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.connectOnPowerOn"> Connect when powered on.
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Post On GCode Script<br/><font color="red">experimental</font></label>
+        <div class="controls">
+            <textarea rows="5" class="block" data-bind="value: scripts_gcode_psucontrol_post_on"></textarea>
+        </div>
+    </div>
     <br />
 
     <h4>Power Off Options</h4>
@@ -199,6 +212,12 @@
                 <input type="number" min="0" class="input-mini text-right" data-bind="value: settings.plugins.psucontrol.idleTimeoutWaitTemp">
                 <span class="add-on">°C</span>
             </div>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Pre Off GCode Script<br/><font color="red">experimental</font></label>
+        <div class="controls">
+            <textarea rows="5" class="block" data-bind="value: scripts_gcode_psucontrol_pre_off"></textarea>
         </div>
     </div>
     <!-- /ko -->

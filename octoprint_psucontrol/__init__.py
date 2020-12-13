@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2017 Shawn Bruce - Released under terms of the AG
 
 import octoprint.plugin
 from octoprint.server import user_permission
+from octoprint.events import Events
 import time
 import subprocess
 import threading
@@ -68,10 +69,11 @@ except:
 
 
 class PSUControl(octoprint.plugin.StartupPlugin,
-                   octoprint.plugin.TemplatePlugin,
-                   octoprint.plugin.AssetPlugin,
-                   octoprint.plugin.SettingsPlugin,
-                   octoprint.plugin.SimpleApiPlugin):
+                 octoprint.plugin.TemplatePlugin,
+                 octoprint.plugin.AssetPlugin,
+                 octoprint.plugin.SettingsPlugin,
+                 octoprint.plugin.SimpleApiPlugin,
+                 octoprint.plugin.EventHandlerPlugin):
 
     def __init__(self):
         try:
@@ -164,6 +166,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.postOnDelay = self._settings.get_float(["postOnDelay"])
         self._logger.debug("postOnDelay: %s" % self.postOnDelay)
 
+        self.connectOnPowerOn = self._settings.get_boolean(["connectOnPowerOn"])
+        self._logger.debug("connectOnPowerOn: %s" % self.connectOnPowerOn)
+
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self._logger.debug("disconnectOnPowerOff: %s" % self.disconnectOnPowerOff)
 
@@ -207,6 +212,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
         self._logger.debug("idleTimeoutWaitTemp: %s" % self.idleTimeoutWaitTemp)
+
+        scripts = self._settings.listScripts("gcode")
+        if not "psucontrol_post_on" in scripts:
+            self._settings.saveScript("gcode", "psucontrol_post_on", u'')
+
+        scripts = self._settings.listScripts("gcode")
+        if not "psucontrol_pre_off" in scripts:
+            self._settings.saveScript("gcode", "psucontrol_pre_off", u'')
 
         if self.switchingMethod == 'GCODE':
             self._logger.info("Using G-Code Commands for On/Off")
@@ -375,7 +388,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             elif (old_isPSUOn != self.isPSUOn) and not self.isPSUOn:
                 self._stop_idle_timer()
 
-            self._plugin_manager.send_plugin_message(self._identifier, dict(hasGPIO=self._hasGPIO, isPSUOn=self.isPSUOn))
+            self._plugin_manager.send_plugin_message(self._identifier, dict(isPSUOn=self.isPSUOn))
 
             self._check_psu_state_event.wait(self.sensePollingInterval)
             self._check_psu_state_event.clear()
@@ -540,10 +553,21 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._noSensing_isPSUOn = True
          
             time.sleep(0.1 + self.postOnDelay)
+
             self.check_psu_state()
+
+            if self.connectOnPowerOn and self._printer.is_closed_or_error():
+                self._printer.connect()
+                time.sleep(0.1)
+
+            if not self._printer.is_closed_or_error():
+                self._printer.script("psucontrol_post_on", must_be_set=False)
         
     def turn_psu_off(self):
         if self.switchingMethod == 'GCODE' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
+            if not self._printer.is_closed_or_error():
+                self._printer.script("psucontrol_pre_off", must_be_set=False)
+            
             self._logger.info("Switching PSU Off")
             if self.switchingMethod == 'GCODE':
                 self._logger.debug("Switching PSU Off Using GCODE: %s" % self.offGCodeCommand)
@@ -581,6 +605,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                         
             time.sleep(0.1)
             self.check_psu_state()
+
+    def on_event(self, event, payload):
+        if event == Events.CLIENT_OPENED:
+            self._plugin_manager.send_plugin_message(self._identifier, dict(hasGPIO=self._hasGPIO, isPSUOn=self.isPSUOn))
+            return
 
     def get_api_commands(self):
         return dict(
@@ -623,6 +652,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             pseudoOnGCodeCommand = 'M80',
             pseudoOffGCodeCommand = 'M81',
             postOnDelay = 0.0,
+            connectOnPowerOn = False,
             disconnectOnPowerOff = False,
             sensingMethod = 'INTERNAL',
             senseGPIOPin = 0,
@@ -662,6 +692,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.pseudoOnGCodeCommand = self._settings.get(["pseudoOnGCodeCommand"])
         self.pseudoOffGCodeCommand = self._settings.get(["pseudoOffGCodeCommand"])
         self.postOnDelay = self._settings.get_float(["postOnDelay"])
+        self.connectOnPowerOn = self._settings.get_boolean(["connectOnPowerOn"])
         self.disconnectOnPowerOff = self._settings.get_boolean(["disconnectOnPowerOff"])
         self.sensingMethod = self._settings.get(["sensingMethod"])
         self.senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
@@ -678,6 +709,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.enablePowerOffWarningDialog = self._settings.get_boolean(["enablePowerOffWarningDialog"])
         self._idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
+
+        if 'scripts_gcode_psucontrol_post_on' in data:
+            script = data["scripts_gcode_psucontrol_post_on"]
+            self._settings.saveScript("gcode", "psucontrol_post_on", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
+
+        if 'scripts_gcode_psucontrol_pre_off' in data:
+            script = data["scripts_gcode_psucontrol_pre_off"]
+            self._settings.saveScript("gcode", "psucontrol_pre_off", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
 
         #GCode switching and PseudoOnOff are not compatible.
         if self.switchingMethod == 'GCODE' and self.enablePseudoOnOff:
