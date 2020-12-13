@@ -558,6 +558,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
             if self.connectOnPowerOn and self._printer.is_closed_or_error():
                 self._printer.connect()
+                time.sleep(0.1)
 
             if not self._printer.is_closed_or_error():
                 self._printer.script("psucontrol_post_on", must_be_set=False)
