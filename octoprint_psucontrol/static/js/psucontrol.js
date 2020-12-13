@@ -4,11 +4,14 @@ $(function() {
 
         self.settingsViewModel = parameters[0]
         self.loginState = parameters[1];
+        
         self.settings = undefined;
         self.scripts_gcode_psucontrol_post_on = ko.observable(undefined);
         self.scripts_gcode_psucontrol_pre_off = ko.observable(undefined);
-        self.hasGPIO = ko.observable(undefined);
+
+        self.hasGPIO = ko.observable(true);
         self.isPSUOn = ko.observable(undefined);
+
         self.psu_indicator = $("#psucontrol_indicator");
 
         self.onBeforeBinding = function() {
@@ -64,8 +67,13 @@ $(function() {
                 return;
             }
 
-            self.hasGPIO(data.hasGPIO);
-            self.isPSUOn(data.isPSUOn);
+            if (data.hasGPIO !== undefined) {
+                self.hasGPIO(data.hasGPIO);
+            }
+
+            if (data.isPSUOn !== undefined) {
+                self.isPSUOn(data.isPSUOn);
+            }
         };
 
         self.togglePSU = function() {
