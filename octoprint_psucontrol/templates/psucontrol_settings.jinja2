@@ -19,8 +19,17 @@
         </div>
     </div>
     <!-- /ko -->
-    <br />
+    <div class="control-group">
+        <label class="control-label">Icon</label>
+        <div class="controls">
+            <select data-bind="value: settings.plugins.psucontrol.iconDesign">
+                <option value="fa-bolt">Bolt</option>
+                <option value="fa-power-off">Power</option>
+            </select>
+        </div>
+    </div>
 
+    <br />
     <h4>Switching</h4>
     <div class="control-group">
         <label class="control-label">Switching Method</label>
@@ -112,7 +121,7 @@
     <div class="control-group">
         <label class="control-label">Sensing GPIO Pin</label>
         <div class="controls">
-            <input type="number" min="0" class="input-mini" data-bind="value: settings.plugins.psucontrol.senseGPIOPin"> 
+            <input type="number" min="0" class="input-mini" data-bind="value: settings.plugins.psucontrol.senseGPIOPin">
             <select data-bind="value: settings.plugins.psucontrol.senseGPIOPinPUD" class="input-medium">
                 <option value="">Float</option>
                 <option value="PULL_UP">Pull-Up</option>
@@ -165,7 +174,7 @@
                 <span class="add-on">sec</span>
             </div>
         </div>
-    </div>  
+    </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">

@@ -4,7 +4,7 @@ $(function() {
 
         self.settingsViewModel = parameters[0]
         self.loginState = parameters[1];
-        
+
         self.settings = undefined;
         self.scripts_gcode_psucontrol_post_on = ko.observable(undefined);
         self.scripts_gcode_psucontrol_pre_off = ko.observable(undefined);
@@ -12,7 +12,7 @@ $(function() {
         self.hasGPIO = ko.observable(true);
         self.isPSUOn = ko.observable(undefined);
 
-        self.psu_indicator = $("#psucontrol_indicator");
+        self.psu_indicator = $("#psucontrol_indicator > i");
 
         self.onBeforeBinding = function() {
             self.settings = self.settingsViewModel.settings;
@@ -26,6 +26,8 @@ $(function() {
         self.onSettingsHidden = function () {
             self.settings.plugins.psucontrol.scripts_gcode_psucontrol_post_on = null;
             self.settings.plugins.psucontrol.scripts_gcode_psucontrol_pre_off = null;
+            // Update icon
+            self.updateIcon();
         };
 
         self.onSettingsBeforeSave = function () {
@@ -40,15 +42,29 @@ $(function() {
             }
         };
 
+        self.updateIcon = function(){
+            if (self.settings != undefined){
+                icon = self.settings.plugins.psucontrol.iconDesign();
+                // Remove old icon
+                self.psu_indicator.removeClass (function (index, className) {
+                    return (className.match (/(^|\s)fa-\S+/g) || []).join(' ');
+                });
+                self.psu_indicator.addClass(icon);
+            }else{
+                self.psu_indicator.addClass('fa-bolt');
+            }
+            if (self.isPSUOn()) {
+                self.psu_indicator.removeClass("muted").addClass("text-success");
+            } else {
+                self.psu_indicator.removeClass("text-success").addClass("muted");
+            }
+        }
+
         self.onStartup = function () {
             self.isPSUOn.subscribe(function() {
-                if (self.isPSUOn()) {
-                    self.psu_indicator.removeClass("off").addClass("on");
-                } else {
-                    self.psu_indicator.removeClass("on").addClass("off");
-                }   
+                self.updateIcon();
             });
-            
+
             $.ajax({
                 url: API_BASEURL + "plugin/psucontrol",
                 type: "POST",
@@ -115,7 +131,7 @@ $(function() {
                 }),
                 contentType: "application/json; charset=UTF-8"
             })
-        };   
+        };
     }
 
     ADDITIONAL_VIEWMODELS.push([
