@@ -6,8 +6,8 @@ $(function() {
         self.loginState = parameters[1];
         
         self.settings = undefined;
-        self.scripts_gcode_psucontrol_post_on = ko.observable(undefined);
-        self.scripts_gcode_psucontrol_pre_off = ko.observable(undefined);
+        self.scripts_gcode_psucontrol_post_on = ko.observable("");
+        self.scripts_gcode_psucontrol_pre_off = ko.observable("");
 
         self.hasGPIO = ko.observable(true);
         self.isPSUOn = ko.observable(undefined);
