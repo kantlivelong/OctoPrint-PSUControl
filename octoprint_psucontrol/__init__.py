@@ -495,6 +495,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def hook_gcode_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
         skipQueuing = False
 
+        if not gcode:
+            gcode = cmd.split(' ', 1)[0]
         if gcode:
             if self.enablePseudoOnOff:
                 if gcode == self.pseudoOnGCodeCommand:
