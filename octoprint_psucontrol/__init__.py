@@ -99,6 +99,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.pseudoOnGCodeCommand = ''
         self.pseudoOffGCodeCommand = ''
         self.postOnDelay = 0.0
+        self.autoOnBeforePrint = False
         self.autoOn = False
         self.autoOnTriggerGCodeCommands = ''
         self._autoOnTriggerGCodeCommandsArray = []
@@ -189,6 +190,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.senseSystemCommand = self._settings.get(["senseSystemCommand"])
         self._logger.debug("senseSystemCommand: %s" % self.senseSystemCommand)
+
+        self.autoOnBeforePrint = self._settings.get_boolean(["autoOnBeforePrint"])
+        self._logger.debug("autoOnBeforePrint: %s" % self.autoOnBeforePrint)
 
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self._logger.debug("autoOn: %s" % self.autoOn)
@@ -518,6 +522,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if skipQueuing:
                 return (None,)
 
+    def hook_scripts(self, comm_instance, script_type, script_name, *args, **kwargs):
+        if self.autoOnBeforePrint and not self.isPSUOn and script_type == "gcode" and script_name == "beforePrintStarted":
+            self._logger.info("Turning PSU On (Triggered by Print Start)")
+            self.turn_psu_on()
+
     def turn_psu_on(self):
         if self.switchingMethod == 'GCODE' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
             self._logger.info("Switching PSU On")
@@ -660,6 +669,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             invertsenseGPIOPin = False,
             senseGPIOPinPUD = '',
             senseSystemCommand = '',
+            autoOnBeforePrint = False,
             autoOn = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M106,M109,M140,M190",
             enablePowerOffWarningDialog = True,
@@ -700,6 +710,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
         self.senseGPIOPinPUD = self._settings.get(["senseGPIOPinPUD"])
         self.senseSystemCommand = self._settings.get(["senseSystemCommand"])
+        self.autoOnBeforePrint = self._settings.get_boolean(["autoOnBeforePrint"])
         self.autoOn = self._settings.get_boolean(["autoOn"])
         self.autoOnTriggerGCodeCommands = self._settings.get(["autoOnTriggerGCodeCommands"])
         self._autoOnTriggerGCodeCommandsArray = self.autoOnTriggerGCodeCommands.split(',')
@@ -817,5 +828,6 @@ def __plugin_load__():
     global __plugin_hooks__
     __plugin_hooks__ = {
         "octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.hook_gcode_queuing,
+        "octoprint.comm.protocol.scripts": __plugin_implementation__.hook_scripts,
         "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
     }

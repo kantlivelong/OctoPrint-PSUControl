@@ -145,7 +145,10 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOn"> Automatically turn PSU ON
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOnBeforePrint"> Automatically turn PSU on before a print is started
+            </label>
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.autoOn"> Automatically turn PSU on when GCODE recieved
             </label>
         </div>
     </div>
