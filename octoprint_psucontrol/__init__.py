@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2017 Shawn Bruce - Released under terms of the AG
 import octoprint.plugin
 from octoprint.server import user_permission
 from octoprint.events import Events
+from octoprint.util import RepeatedTimer
 import time
 import subprocess
 import threading
@@ -103,6 +104,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.autoOnTriggerGCodeCommands = ''
         self._autoOnTriggerGCodeCommandsArray = []
         self.enablePowerOffWarningDialog = True
+        self.enableIdleCountdownTimer = True
         self.powerOffWhenIdle = False
         self.idleTimeout = 0
         self.idleIgnoreCommands = ''
@@ -120,6 +122,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._check_psu_state_thread = None
         self._check_psu_state_event= threading.Event()
         self._idleTimer = None
+        self._idleCountdown = None
+        self._idleStartTime = 0
+        self._idleTimeLeft = None
         self._waitForHeaters = False
         self._skipIdleTimer = False
         self._configuredGPIOPins = []
@@ -199,6 +204,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.enablePowerOffWarningDialog = self._settings.get_boolean(["enablePowerOffWarningDialog"])
         self._logger.debug("enablePowerOffWarningDialog: %s" % self.enablePowerOffWarningDialog)
+
+        self.enableIdleCountdownTimer = self._settings.get_boolean(["enableIdleCountdownTimer"])
+        self._logger.debug("enableIdleCountdownTimer: %s" % self.enableIdleCountdownTimer)
 
         self.powerOffWhenIdle = self._settings.get_boolean(["powerOffWhenIdle"])
         self._logger.debug("powerOffWhenIdle: %s" % self.powerOffWhenIdle)
@@ -393,22 +401,40 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._check_psu_state_event.wait(self.sensePollingInterval)
             self._check_psu_state_event.clear()
 
+    def _set_start_time(self):
+        self._idleStartTime = time.time()
+
+    def _refresh_countdown(self):
+        if self._idleStartTime == 0 or not self.powerOffWhenIdle or not self.enableIdleCountdownTimer or self._printer.is_printing() or self._printer.is_paused():
+            self.idleTimeLeft = None
+        else:
+            self.idleTimeLeft = time.strftime("%-M:%S", time.gmtime((self.idleTimeout * 60) - (time.time() - self._idleStartTime)))
+        self._plugin_manager.send_plugin_message(self._identifier, dict(idleTimeLeft=self.idleTimeLeft))
+
     def _start_idle_timer(self):
         self._stop_idle_timer()
         
         if self.powerOffWhenIdle and self.isPSUOn:
             self._idleTimer = ResettableTimer(self.idleTimeout * 60, self._idle_poweroff)
+            self._idleCountdown = RepeatedTimer(1.0, self._refresh_countdown)
             self._idleTimer.start()
+            self._set_start_time()
+            self._idleCountdown.start()
 
     def _stop_idle_timer(self):
         if self._idleTimer:
             self._idleTimer.cancel()
             self._idleTimer = None
+            self._idleStartTime = 0
+            self._idleCountdown.cancel()
+            self._idleCountdown = None
+            self._refresh_countdown()
 
     def _reset_idle_timer(self):
         try:
             if self._idleTimer.is_alive():
                 self._idleTimer.reset()
+                self._set_start_time()
             else:
                 raise Exception()
         except:
@@ -665,6 +691,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             autoOn = False,
             autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M106,M109,M140,M190",
             enablePowerOffWarningDialog = True,
+            enableIdleCountdownTimer = True,
             powerOffWhenIdle = False,
             idleTimeout = 30,
             idleIgnoreCommands = 'M105',
@@ -709,6 +736,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self.idleTimeout = self._settings.get_int(["idleTimeout"])
         self.idleIgnoreCommands = self._settings.get(["idleIgnoreCommands"])
         self.enablePowerOffWarningDialog = self._settings.get_boolean(["enablePowerOffWarningDialog"])
+        self.enableIdleCountdownTimer = self._settings.get_boolean(["enableIdleCountdownTimer"])
         self._idleIgnoreCommandsArray = self.idleIgnoreCommands.split(',')
         self.idleTimeoutWaitTemp = self._settings.get_int(["idleTimeoutWaitTemp"])
 

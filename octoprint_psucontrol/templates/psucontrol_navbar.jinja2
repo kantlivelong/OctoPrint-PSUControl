@@ -1,3 +1,4 @@
 <a id="psucontrol_indicator" class="pull-right" title="Toggle PSU" href="#" data-bind="click: function() { loginState.isUser() && $root.togglePSU(); }, visible: (isPSUOn() !== undefined)" style="display: none">
     <i class="icon-bolt"></i>
+    <span data-bind="attr: { title: 'Idle Countdown' }, html: idleTimeLeft()"></span>
 </a>
