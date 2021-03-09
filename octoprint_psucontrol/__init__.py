@@ -497,28 +497,28 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         if not gcode:
             gcode = cmd.split(' ', 1)[0]
-        if gcode:
-            if self.enablePseudoOnOff:
-                if gcode == self.pseudoOnGCodeCommand:
-                    self.turn_psu_on()
-                    comm_instance._log("PSUControl: ok")
-                    skipQueuing = True
-                elif gcode == self.pseudoOffGCodeCommand:
-                    self.turn_psu_off()
-                    comm_instance._log("PSUControl: ok")
-                    skipQueuing = True
 
-            if (not self.isPSUOn and self.autoOn and (gcode in self._autoOnTriggerGCodeCommandsArray)):
-                self._logger.info("Auto-On - Turning PSU On (Triggered by %s)" % gcode)
+        if self.enablePseudoOnOff:
+            if gcode == self.pseudoOnGCodeCommand:
                 self.turn_psu_on()
+                comm_instance._log("PSUControl: ok")
+                skipQueuing = True
+            elif gcode == self.pseudoOffGCodeCommand:
+                self.turn_psu_off()
+                comm_instance._log("PSUControl: ok")
+                skipQueuing = True
 
-            if self.powerOffWhenIdle and self.isPSUOn and not self._skipIdleTimer:
-                if not (gcode in self._idleIgnoreCommandsArray):
-                    self._waitForHeaters = False
-                    self._reset_idle_timer()
+        if (not self.isPSUOn and self.autoOn and (gcode in self._autoOnTriggerGCodeCommandsArray)):
+            self._logger.info("Auto-On - Turning PSU On (Triggered by %s)" % gcode)
+            self.turn_psu_on()
 
-            if skipQueuing:
-                return (None,)
+        if self.powerOffWhenIdle and self.isPSUOn and not self._skipIdleTimer:
+            if not (gcode in self._idleIgnoreCommandsArray):
+                self._waitForHeaters = False
+                self._reset_idle_timer()
+
+        if skipQueuing:
+            return (None,)
 
     def turn_psu_on(self):
         if self.switchingMethod == 'GCODE' or self.switchingMethod == 'GPIO' or self.switchingMethod == 'SYSTEM':
