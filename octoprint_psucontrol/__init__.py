@@ -383,6 +383,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             
             self._logger.debug("isPSUOn: %s" % self.isPSUOn)
 
+            if (old_isPSUOn != self.isPSUOn):
+                self._logger.debug("PSU state changed, firing psu_state_changed event.")
+                event = Events.PLUGIN_PSUCONTROL_PSU_STATE_CHANGED
+                self._event_bus.fire(event, payload=dict(psu_state=self.isPSUOn))
+
             if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
                 self._start_idle_timer()
             elif (old_isPSUOn != self.isPSUOn) and not self.isPSUOn:
@@ -807,6 +812,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             )
         )
 
+    def get_psu_state(self):
+        return self.isPSUOn
+
+    def register_custom_events(self):
+        return ["psu_state_changed"]
+
 __plugin_name__ = "PSU Control"
 __plugin_pythoncompat__ = ">=2.7,<4"
 
@@ -817,5 +828,13 @@ def __plugin_load__():
     global __plugin_hooks__
     __plugin_hooks__ = {
         "octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.hook_gcode_queuing,
-        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information
+        "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
+        "octoprint.events.register_custom_events": __plugin_implementation__.register_custom_events
     }
+
+    global __plugin_helpers__
+    __plugin_helpers__ = dict(
+        get_psu_state = __plugin_implementation__.get_psu_state,
+        turn_psu_on = __plugin_implementation__.turn_psu_on,
+        turn_psu_off = __plugin_implementation__.turn_psu_off
+    )
