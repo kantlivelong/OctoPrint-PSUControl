@@ -385,8 +385,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
             if (old_isPSUOn != self.isPSUOn):
                 self._logger.debug("PSU state changed, firing psu_state_changed event.")
+
                 event = Events.PLUGIN_PSUCONTROL_PSU_STATE_CHANGED
-                self._event_bus.fire(event, payload=dict(psu_state=self.isPSUOn))
+                self._event_bus.fire(event, payload=dict(isPSUOn=self.isPSUOn))
 
             if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
                 self._start_idle_timer()
@@ -613,6 +614,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             time.sleep(0.1)
             self.check_psu_state()
 
+
+    def get_psu_state(self):
+        return self.isPSUOn
+
     def on_event(self, event, payload):
         if event == Events.CLIENT_OPENED:
             self._plugin_manager.send_plugin_message(self._identifier, dict(hasGPIO=self._hasGPIO, isPSUOn=self.isPSUOn))
@@ -813,9 +818,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 pip="https://github.com/kantlivelong/OctoPrint-PSUControl/archive/{target_version}.zip"
             )
         )
-
-    def get_psu_state(self):
-        return self.isPSUOn
 
     def register_custom_events(self):
         return ["psu_state_changed"]
