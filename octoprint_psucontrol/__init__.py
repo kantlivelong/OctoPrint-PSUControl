@@ -650,19 +650,21 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def on_settings_save(self, data):
+        if 'scripts_gcode_psucontrol_post_on' in data:
+            script = data["scripts_gcode_psucontrol_post_on"]
+            self._settings.saveScript("gcode", "psucontrol_post_on", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
+            data.pop('scripts_gcode_psucontrol_post_on')
+
+        if 'scripts_gcode_psucontrol_pre_off' in data:
+            script = data["scripts_gcode_psucontrol_pre_off"]
+            self._settings.saveScript("gcode", "psucontrol_pre_off", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
+            data.pop('scripts_gcode_psucontrol_pre_off')
+
         old_config = self.config.copy()
 
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
         self.reload_settings()
-
-        if 'scripts_gcode_psucontrol_post_on' in data:
-            script = data["scripts_gcode_psucontrol_post_on"]
-            self._settings.saveScript("gcode", "psucontrol_post_on", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
-
-        if 'scripts_gcode_psucontrol_pre_off' in data:
-            script = data["scripts_gcode_psucontrol_pre_off"]
-            self._settings.saveScript("gcode", "psucontrol_pre_off", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
 
         #GCode switching and PseudoOnOff are not compatible.
         if self.config['switchingMethod'] == 'GCODE' and self.config['enablePseudoOnOff']:
