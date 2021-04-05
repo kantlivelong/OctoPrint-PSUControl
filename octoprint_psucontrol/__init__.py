@@ -706,7 +706,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def get_settings_version(self):
-        return 3
+        return 4
 
 
     def on_settings_migrate(self, target, current=None):
@@ -745,6 +745,21 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.info("Migrating Setting: enableSensing=True -> sensingMethod=GPIO")
                 self._settings.set(["sensingMethod"], "GPIO")
                 self._settings.remove(["enableSensing"])
+
+        if current < 4:
+            # v4 drops RPi.GPIO in favor of Python-Periphery.
+            cur_switchingMethod = self._settings.get(["switchingMethod"])
+            cur_sensingMethod = self._settings.get(["sensingMethod"])
+            if cur_switchingMethod == 'GPIO' or cur_sensingMethod == 'GPIO':
+                if len(self._availableGPIODevices) > 0:
+                    # This was likely a Raspberry Pi using RPi.GPIO. Set GPIODevice to the first dev found which is likely /dev/gpiochip0
+                    self._settings.set(["GPIODevice"], self._availableGPIODevices[0])
+                else:
+                    # GPIO was used for either but no GPIO devices exist. Resetting to defaults.
+                    self._settings.remove(["switchingMethod"])
+                    self._settings.remove(["sensingMethod"])
+
+            self._settings.remove(["GPIOMode"])
 
 
     def get_template_configs(self):
