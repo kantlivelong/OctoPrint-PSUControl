@@ -6,14 +6,17 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2017 Shawn Bruce - Released under terms of the AGPLv3 License"
 
 import octoprint.plugin
-from octoprint.server import user_permission
+try:
+    from octoprint.access.permissions import Permissions
+except:
+    from octoprint.server import user_permission
 from octoprint.events import Events
 import time
 import subprocess
 import threading
-import os
 import glob
 from flask import make_response, jsonify
+from flask_babel import gettext
 import periphery
 
 try:
@@ -633,8 +636,20 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def on_api_command(self, command, data):
-        if not user_permission.can():
-            return make_response("Insufficient rights", 403)
+        if command in ['turnPSUOn', 'turnPSUOff', 'togglePSU']:
+            try:
+                if not Permissions.PLUGIN_PSUCONTROL_CONTROL.can():
+                    return make_response("Insufficient rights", 403)
+            except:
+                if not user_permission.can():
+                    return make_response("Insufficient rights", 403)
+        elif command in ['getPSUState']:
+            try:
+                if not Permissions.STATUS.can():
+                    return make_response("Insufficient rights", 403)
+            except:
+                if not user_permission.can():
+                    return make_response("Insufficient rights", 403)
 
         if command == 'turnPSUOn':
             self.turn_psu_on()
@@ -801,6 +816,17 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         return ["psu_state_changed"]
 
 
+    def get_additional_permissions(self, *args, **kwargs):
+        return [
+            dict(key="CONTROL",
+                 name="Control",
+                 description=gettext("Allows switching PSU on/off"),
+                 roles=["admin"],
+                 dangerous=True,
+                 default_groups=[Permissions.ADMIN_GROUP])
+        ]
+
+
 __plugin_name__ = "PSU Control"
 __plugin_pythoncompat__ = ">=2.7,<4"
 
@@ -812,7 +838,8 @@ def __plugin_load__():
     __plugin_hooks__ = {
         "octoprint.comm.protocol.gcode.queuing": __plugin_implementation__.hook_gcode_queuing,
         "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
-        "octoprint.events.register_custom_events": __plugin_implementation__.register_custom_events
+        "octoprint.events.register_custom_events": __plugin_implementation__.register_custom_events,
+        "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
     }
 
     global __plugin_helpers__
