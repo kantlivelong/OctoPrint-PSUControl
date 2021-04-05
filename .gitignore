@@ -1,0 +1,4 @@
+OctoPrint_*.egg-info
+.idea
+*.swp
+__pycache__

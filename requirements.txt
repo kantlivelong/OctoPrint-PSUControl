@@ -1,2 +1,2 @@
 OctoPrint
-RPi.GPIO>=0.6.3
+python-periphery
