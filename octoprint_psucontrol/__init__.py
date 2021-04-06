@@ -149,10 +149,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         for k, v in self.get_settings_defaults().items():
             if isinstance(v, str):
                 v = self._settings.get([k])
-            elif isinstance(v, bool):
-                v = self._settings.get_boolean([k])
             elif isinstance(v, int):
                 v = self._settings.get_int([k])
+            elif isinstance(v, float):
+                v = self._settings.get_float([k])
+            elif isinstance(v, bool):
+                v = self._settings.get_boolean([k])
 
             self.config[k] = v
             self._logger.debug("{}: {}".format(k, v))
