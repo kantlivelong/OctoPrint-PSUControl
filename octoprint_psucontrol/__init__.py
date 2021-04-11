@@ -413,6 +413,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Waiting for heaters({}) before shutting off PSU...".format(', '.join(heaters_above_waittemp)))
             time.sleep(5)
 
+
     def hook_gcode_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
         skipQueuing = False
 
@@ -440,6 +441,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         if skipQueuing:
             return (None,)
+
 
     def turn_psu_on(self):
         if self.config['switchingMethod'] == 'GCODE' or self.config['switchingMethod'] == 'GPIO' or self.config['switchingMethod'] == 'SYSTEM' or self.config['switchingMethod'] == 'PLUGIN':
@@ -499,6 +501,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
             if not self._printer.is_closed_or_error():
                 self._printer.script("psucontrol_post_on", must_be_set=False)
+
 
     def turn_psu_off(self):
         if self.config['switchingMethod'] == 'GCODE' or self.config['switchingMethod'] == 'GPIO' or self.config['switchingMethod'] == 'SYSTEM' or self.config['switchingMethod'] == 'PLUGIN':
