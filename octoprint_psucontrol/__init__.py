@@ -400,13 +400,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     continue
 
                 self._logger.debug("Heater {} = {}C".format(heater, temp))
-                if temp > self.idleTimeoutWaitTemp:
+                if temp > self.config['idleTimeoutWaitTemp']:
                     heaters_above_waittemp.append(heater)
 
                 if temp > highest_temp:
                     highest_temp = temp
 
-            if highest_temp <= self.idleTimeoutWaitTemp:
+            if highest_temp <= self.config['idleTimeoutWaitTemp']:
                 self._waitForHeaters = False
                 return True
 
