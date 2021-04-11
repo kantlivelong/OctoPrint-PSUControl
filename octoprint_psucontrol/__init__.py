@@ -247,13 +247,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 self._logger.debug("Result: {}".format(r))
 
-                if r == 1:
-                    new_isPSUOn = True
-                elif r == 0:
-                    new_isPSUOn = False
-
-                if self.config['invertsenseGPIOPin']:
-                    new_isPSUOn = not new_isPSUOn
+                new_isPSUOn = r ^ self.config['invertsenseGPIOPin']
 
                 self.isPSUOn = new_isPSUOn
             elif self.config['sensingMethod'] == 'SYSTEM':
@@ -461,11 +455,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("On system command returned: {}".format(r))
             elif self.config['switchingMethod'] == 'GPIO':
                 self._logger.debug("Switching PSU On Using GPIO: {}".format(self.config['onoffGPIOPin']))
-                # TODO: Look at this. Make it less confusing
-                if not self.config['invertonoffGPIOPin']:
-                    pin_output = 1
-                else:
-                    pin_output = 0
+                pin_output = 1 ^ self.config['invertonoffGPIOPin']
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
@@ -524,11 +514,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Off system command returned: {}".format(r))
             elif self.config['switchingMethod'] == 'GPIO':
                 self._logger.debug("Switching PSU Off Using GPIO: {}".format(self.config['onoffGPIOPin']))
-                # TODO: Look at this. Make it less confusing
-                if not self.config['invertonoffGPIOPin']:
-                    pin_output = 0
-                else:
-                    pin_output = 1
+                pin_output = 0 ^ self.config['invertonoffGPIOPin']
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
