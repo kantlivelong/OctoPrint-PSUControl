@@ -723,17 +723,74 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         if current < 4:
             # v4 drops RPi.GPIO in favor of Python-Periphery.
+            cur_GPIOMode = self._settings.get(["GPIOMode"])
             cur_switchingMethod = self._settings.get(["switchingMethod"])
             cur_sensingMethod = self._settings.get(["sensingMethod"])
-            if cur_switchingMethod == 'GPIO' or cur_sensingMethod == 'GPIO':
+            cur_onoffGPIOPin = self._settings.get_int(["onoffGPIOPin"])
+            cur_invertonoffGPIOPin = self._settings.get_boolean(["invertonoffGPIOPin"])
+            cur_senseGPIOPin = self._settings.get_int(["senseGPIOPin"])
+            cur_invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
+            cur_senseGPIOPinPUD = self._settings.get(["senseGPIOPinPUD"])
+
+            if (cur_switchingMethod == 'GPIO' or cur_sensingMethod == 'GPIO') and cur_GPIOMode == 'BOARD':
+                # Convert BOARD pin numbers to BCM
+
+                try:
+                    global GPIO
+                    import RPi.GPIO as GPIO
+                    _has_gpio = True
+                except (ImportError, RuntimeError):
+                    _has_gpio = False
+
+                if _has_gpio:
+                    def _gpio_board_to_bcm(pin):
+                        _pin_to_gpio_rev1 = [-1, -1, -1, 0, -1, 1, -1, 4, 14, -1, 15, 17, 18, 21, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
+                        _pin_to_gpio_rev2 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
+                        _pin_to_gpio_rev3 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, 5, -1, 6, 12, 13, -1, 19, 16, 26, 20, -1, 21 ]
+
+                        if GPIO.RPI_REVISION == 1:
+                            pin_to_gpio = _pin_to_gpio_rev1
+                        elif GPIO.RPI_REVISION == 2:
+                            pin_to_gpio = _pin_to_gpio_rev2
+                        else:
+                            pin_to_gpio = _pin_to_gpio_rev3
+
+                        return pin_to_gpio[pin]
+
+                    if cur_switchingMethod == 'GPIO':
+                        p = _gpio_board_to_bcm(cur_onoffGPIOPin)
+                        self._logger.info("Converting pin number from BOARD to BCM. onoffGPIOPin={} -> onoffGPIOPin={}".format(cur_onoffGPIOPin, p))
+                        self._settings.set_int(["onoffGPIOPin"], p)
+
+                    if cur_sensingMethod == 'GPIO':
+                        p = _gpio_board_to_bcm(cur_senseGPIOPin)
+                        self._logger.info("Converting pin number from BOARD to BCM. senseGPIOPin={} -> senseGPIOPin={}".format(cur_senseGPIOPin, p))
+                        self._settings.set_int(["senseGPIOPin"], p)
+
                 if len(self._availableGPIODevices) > 0:
                     # This was likely a Raspberry Pi using RPi.GPIO. Set GPIODevice to the first dev found which is likely /dev/gpiochip0
+                    self._logger.info("Setting GPIODevice to the first found. GPIODevice={}".format(self._availableGPIODevices[0]))
                     self._settings.set(["GPIODevice"], self._availableGPIODevices[0])
                 else:
-                    # GPIO was used for either but no GPIO devices exist. Resetting to defaults.
+                    # GPIO was used for either but no GPIO devices exist. Reset to defaults.
+                    self._logger.warning("No GPIO devices found. Reverting switchingMethod and sensingMethod to defaults.")
                     self._settings.remove(["switchingMethod"])
                     self._settings.remove(["sensingMethod"])
 
+
+                # Write the config to psucontrol_rpigpio just in case the user decides/needs to switch to it.
+                self._logger.info("Writing original GPIO related settings to psucontrol_rpigpio.")
+                self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'GPIOMode'], cur_GPIOMode)
+                self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'switchingMethod'], cur_switchingMethod)
+                self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'sensingMethod'], cur_sensingMethod)
+                self._settings.global_set_int(['plugins', 'psucontrol_rpigpio', 'onoffGPIOPin'], cur_onoffGPIOPin)
+                self._settings.global_set_boolean(['plugins', 'psucontrol_rpigpio', 'invertonoffGPIOPin'], cur_invertonoffGPIOPin)
+                self._settings.global_set_int(['plugins', 'psucontrol_rpigpio', 'senseGPIOPin'], cur_senseGPIOPin)
+                self._settings.global_set_boolean(['plugins', 'psucontrol_rpigpio', 'invertsenseGPIOPin'], cur_invertsenseGPIOPin)
+                self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'senseGPIOPinPUD'], cur_senseGPIOPinPUD)
+
+            # Remove now unused config option
+            self._logger.info("Removing Setting: GPIOMode")
             self._settings.remove(["GPIOMode"])
 
 
