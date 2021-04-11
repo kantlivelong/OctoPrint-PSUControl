@@ -23,7 +23,7 @@ except:
 try:
     from octoprint.util import ResettableTimer
 except:
-    from.util import ResettableTimer
+    from .util import ResettableTimer
 
 
 class PSUControl(octoprint.plugin.StartupPlugin,
