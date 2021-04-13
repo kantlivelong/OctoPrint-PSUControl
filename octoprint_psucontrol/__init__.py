@@ -150,7 +150,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.debug("Cleaning up pin {}".format(pin))
             try:
                 pin.close()
-            except (RuntimeError, ValueError) as e:
+            except Exception as e:
                 self._logger.error(e)
         self._configuredGPIOPins = {}
 
@@ -165,7 +165,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             try:
                 pin = periphery.GPIO(self.config['GPIODevice'], self.config['onoffGPIOPin'], 'out')
                 self._configuredGPIOPins['switch'] = pin
-            except (RuntimeError, ValueError) as e:
+            except Exception as e:
                 self._logger.error(e)
             else:
                 pin.write(not self.config['invertonoffGPIOPin'])
@@ -184,7 +184,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             try:
                 pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'], direction='in', bias=bias)
                 self._configuredGPIOPins['sense'] = pin
-            except (RuntimeError, ValueError) as e:
+            except Exception as e:
                 self._logger.error(e)
 
 
@@ -242,7 +242,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 r = 0
                 try:
                     r = self._configuredGPIOPins['sense'].read()
-                except (RuntimeError, ValueError) as e:
+                except Exception as e:
                     self._logger.error(e)
 
                 self._logger.debug("Result: {}".format(r))
@@ -459,7 +459,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
-                except (RuntimeError, ValueError) as e:
+                except Exception as e:
                     self._logger.error(e)
                     return
             elif self.config['switchingMethod'] == 'PLUGIN':
@@ -518,7 +518,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
-                except (RuntimeError, ValueError) as e:
+                except Exception as e:
                     self._logger.error(e)
                     return
             elif self.config['switchingMethod'] == 'PLUGIN':
