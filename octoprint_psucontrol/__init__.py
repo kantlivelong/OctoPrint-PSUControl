@@ -162,13 +162,16 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Using GPIO for On/Off")
             self._logger.info("Configuring GPIO for pin {}".format(self.config['onoffGPIOPin']))
 
+            if not self.config['invertonoffGPIOPin']:
+                initial_output = 'low'
+            else:
+                initial_output = 'high'
+
             try:
-                pin = periphery.GPIO(self.config['GPIODevice'], self.config['onoffGPIOPin'], 'out')
+                pin = periphery.GPIO(self.config['GPIODevice'], self.config['onoffGPIOPin'], initial_output)
                 self._configuredGPIOPins['switch'] = pin
             except Exception as e:
                 self._logger.error(e)
-            else:
-                pin.write(not self.config['invertonoffGPIOPin'])
 
         if self.config['sensingMethod'] == 'GPIO':
             self._logger.info("Using GPIO sensing to determine PSU on/off state.")
@@ -455,7 +458,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("On system command returned: {}".format(r))
             elif self.config['switchingMethod'] == 'GPIO':
                 self._logger.debug("Switching PSU On Using GPIO: {}".format(self.config['onoffGPIOPin']))
-                pin_output = 1 ^ self.config['invertonoffGPIOPin']
+                pin_output = bool(1 ^ self.config['invertonoffGPIOPin'])
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
@@ -512,7 +515,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Off system command returned: {}".format(r))
             elif self.config['switchingMethod'] == 'GPIO':
                 self._logger.debug("Switching PSU Off Using GPIO: {}".format(self.config['onoffGPIOPin']))
-                pin_output = 0 ^ self.config['invertonoffGPIOPin']
+                pin_output = bool(0 ^ self.config['invertonoffGPIOPin'])
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
