@@ -271,19 +271,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             elif self.config['sensingMethod'] == 'PLUGIN':
                 p = self.config['sensingPlugin']
 
+                r = False
+
                 if not hasattr(self._sub_plugins[p], 'get_psu_state'):
                     self._logger.error('Plugin {} is configured for sensing but get_psu_state is not defined.'.format(p))
-                    return
-
-                try:
-                    r = self._sub_plugins[p].get_psu_state()
-                except Exception as e:
-                    self._logger.error(e)
-                    return
+                else:
+                    try:
+                        r = self._sub_plugins[p].get_psu_state()
+                    except Exception as e:
+                        self._logger.error(e)
 
                 self.isPSUOn = r
             else:
-                return
+                self.isPSUOn = False
 
             self._logger.debug("isPSUOn: {}".format(self.isPSUOn))
 
