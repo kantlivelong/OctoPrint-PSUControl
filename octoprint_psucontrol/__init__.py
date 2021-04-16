@@ -438,7 +438,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def turn_psu_on(self):
-        if self.config['switchingMethod'] == 'GCODE' or self.config['switchingMethod'] == 'GPIO' or self.config['switchingMethod'] == 'SYSTEM' or self.config['switchingMethod'] == 'PLUGIN':
+        if self.config['switchingMethod'] in ['GCODE', 'GPIO', 'SYSTEM', 'PLUGIN']:
             self._logger.info("Switching PSU On")
             if self.config['switchingMethod'] == 'GCODE':
                 self._logger.debug("Switching PSU On Using GCODE: {}".format(self.config['onGCodeCommand']))
@@ -475,8 +475,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 except Exception as e:
                     self._logger.error(e)
                     return
-            else:
-                return
 
             if self.config['sensingMethod'] not in ('GPIO', 'SYSTEM', 'PLUGIN'):
                 self._noSensing_isPSUOn = True
@@ -494,7 +492,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def turn_psu_off(self):
-        if self.config['switchingMethod'] == 'GCODE' or self.config['switchingMethod'] == 'GPIO' or self.config['switchingMethod'] == 'SYSTEM' or self.config['switchingMethod'] == 'PLUGIN':
+        if self.config['switchingMethod'] in ['GCODE', 'GPIO', 'SYSTEM', 'PLUGIN']:
             if not self._printer.is_closed_or_error():
                 self._printer.script("psucontrol_pre_off", must_be_set=False)
 
@@ -534,8 +532,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 except Exception as e:
                     self._logger.error(e)
                     return
-            else:
-                return
 
             if self.config['disconnectOnPowerOff']:
                 self._printer.disconnect()
