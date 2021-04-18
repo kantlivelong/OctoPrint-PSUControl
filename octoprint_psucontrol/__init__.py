@@ -596,13 +596,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.reload_settings()
 
-        #GCode switching and PseudoOnOff are not compatible.
-        if self.config['switchingMethod'] == 'GCODE' and self.config['enablePseudoOnOff']:
-            self.config['enablePseudoOnOff'] = False
-            self._settings.set_boolean(["enablePseudoOnOff"], False)
-            self._settings.save()
-
-
         #cleanup GPIO
         self.cleanup_gpio()
 
