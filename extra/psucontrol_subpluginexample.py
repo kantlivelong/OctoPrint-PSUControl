@@ -10,7 +10,7 @@ import octoprint.plugin
 class PSUControl_SubPluginExample(octoprint.plugin.StartupPlugin):
 
     def __init__(self):
-        pass
+        self.status = False
 
 
     def on_startup(self, host, port):
@@ -21,14 +21,6 @@ class PSUControl_SubPluginExample(octoprint.plugin.StartupPlugin):
 
         self._logger.debug("Registering plugin with PSUControl")
         psucontrol_helpers['register_plugin'](self)
-
-
-    def setup(self, *args, **kwargs):
-        self.status = False
-
-
-    def cleanup(self, *args, **kwargs):
-        del self.status
 
 
     def turn_psu_on(self):

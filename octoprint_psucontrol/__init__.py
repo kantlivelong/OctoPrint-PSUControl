@@ -123,16 +123,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def on_after_startup(self):
         if self.config['switchingMethod'] == 'GPIO' or self.config['sensingMethod'] == 'GPIO':
             self.configure_gpio()
-        elif self.config['switchingMethod'] == 'PLUGIN' or self.config['sensingMethod'] == 'PLUGIN':
-            if (self.config['switchingMethod'] == 'PLUGIN' and self.config['sensingMethod'] == 'PLUGIN' and
-                self.config['switchingPlugin'] == self.config['sensingPlugin']):
-                    self.setup_sub_plugin(self.config['switchingPlugin'])
-            else:
-                if self.config['switchingMethod'] == 'PLUGIN':
-                    self.setup_sub_plugin(self.config['switchingPlugin'])
-
-                if self.config['sensingMethod'] == 'PLUGIN':
-                    self.setup_sub_plugin(self.config['sensingPlugin'])
 
         self._check_psu_state_thread = threading.Thread(target=self._check_psu_state)
         self._check_psu_state_thread.daemon = True
@@ -156,8 +146,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def configure_gpio(self):
-        self.cleanup_gpio()
-
         if self.config['switchingMethod'] == 'GPIO':
             self._logger.info("Using GPIO for On/Off")
             self._logger.info("Configuring GPIO for pin {}".format(self.config['onoffGPIOPin']))
@@ -189,30 +177,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._configuredGPIOPins['sense'] = pin
             except Exception as e:
                 self._logger.error(e)
-
-
-    def cleanup_sub_plugin(self, plugin_id):
-        if plugin_id in self._sub_plugins:
-            if not hasattr(self._sub_plugins[plugin_id], 'cleanup'):
-                self._logger.error('Plugin {} does not define a cleanup method.'.format(p))
-                return
-            else:
-                try:
-                    self._sub_plugins[plugin_id].cleanup()
-                except Exception as e:
-                    self._logger.error(e)
-
-
-    def setup_sub_plugin(self, plugin_id):
-        if plugin_id in self._sub_plugins:
-            if not hasattr(self._sub_plugins[plugin_id], 'setup'):
-                self._logger.error('Plugin {} does not define a setup method.'.format(p))
-                return
-            else:
-                try:
-                    self._sub_plugins[plugin_id].setup()
-                except Exception as e:
-                    self._logger.error(e)
 
 
     def _get_plugin_key(self, implementation):
@@ -276,7 +240,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 r = False
 
-                if not hasattr(self._sub_plugins[p], 'get_psu_state'):
+                if p not in self._sub_plugins:
+                    self._logger.error('Plugin {} is configured for sensing it is not registered.'.format(p))
+                elif not hasattr(self._sub_plugins[p], 'get_psu_state'):
                     self._logger.error('Plugin {} is configured for sensing but get_psu_state is not defined.'.format(p))
                 else:
                     try:
@@ -469,15 +435,18 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 p = self.config['switchingPlugin']
                 self._logger.debug("Switching PSU On Using PLUGIN: {}".format(p))
 
-                if not hasattr(self._sub_plugins[p], 'turn_psu_on'):
+                if p not in self._sub_plugins:
+                    self._logger.error('Plugin {} is configured for switching it is not registered.'.format(p))
+                    return
+                elif not hasattr(self._sub_plugins[p], 'turn_psu_on'):
                     self._logger.error('Plugin {} is configured for switching but turn_psu_on is not defined.'.format(p))
                     return
-
-                try:
-                    r = self._sub_plugins[p].turn_psu_on()
-                except Exception as e:
-                    self._logger.error(e)
-                    return
+                else:
+                    try:
+                        r = self._sub_plugins[p].turn_psu_on()
+                    except Exception as e:
+                        self._logger.error(e)
+                        return
 
             if self.config['sensingMethod'] not in ('GPIO', 'SYSTEM', 'PLUGIN'):
                 self._noSensing_isPSUOn = True
@@ -526,15 +495,18 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 p = self.config['switchingPlugin']
                 self._logger.debug("Switching PSU Off Using PLUGIN: {}".format(p))
 
-                if not hasattr(self._sub_plugins[p], 'turn_psu_off'):
+                if p not in self._sub_plugins:
+                    self._logger.error('Plugin {} is configured for switching it is not registered.'.format(p))
+                    return
+                elif not hasattr(self._sub_plugins[p], 'turn_psu_off'):
                     self._logger.error('Plugin {} is configured for switching but turn_psu_off is not defined.'.format(p))
                     return
-
-                try:
-                    r = self._sub_plugins[p].turn_psu_off()
-                except Exception as e:
-                    self._logger.error(e)
-                    return
+                else:
+                    try:
+                        r = self._sub_plugins[p].turn_psu_off()
+                    except Exception as e:
+                        self._logger.error(e)
+                        return
 
             if self.config['disconnectOnPowerOff']:
                 self._printer.disconnect()
@@ -634,25 +606,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         #cleanup GPIO
         self.cleanup_gpio()
 
-        #cleanup sub plugins
-        for k in self._sub_plugins.keys():
-            self.cleanup_sub_plugin(k)
-
         #configure GPIO
         if self.config['switchingMethod'] == 'GPIO' or self.config['sensingMethod'] == 'GPIO':
             self.configure_gpio()
-
-        #configure sub plugins
-        if self.config['switchingMethod'] == 'PLUGIN' or self.config['sensingMethod'] == 'PLUGIN':
-            if (self.config['switchingMethod'] == 'PLUGIN' and self.config['sensingMethod'] == 'PLUGIN' and
-                self.config['switchingPlugin'] == self.config['sensingPlugin']):
-                    self.setup_sub_plugin(self.config['switchingPlugin'])
-            else:
-                if self.config['switchingMethod'] == 'PLUGIN':
-                    self.setup_sub_plugin(self.config['switchingPlugin'])
-
-                if self.config['sensingMethod'] == 'PLUGIN':
-                    self.setup_sub_plugin(self.config['sensingPlugin'])
 
         self._start_idle_timer()
 
