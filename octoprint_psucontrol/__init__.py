@@ -721,10 +721,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 # Convert BOARD pin numbers to BCM
 
                 try:
-                    global GPIO
                     import RPi.GPIO as GPIO
                     _has_gpio = True
-                except (ImportError, RuntimeError):
+                except (ImportError, RuntimeError) as e:
+                    self._logger.error("Error importing RPi.GPIO. BOARD->BCM conversion will not occur. Error={}".format(e))
                     _has_gpio = False
 
                 if _has_gpio:
@@ -773,6 +773,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._settings.global_set_int(['plugins', 'psucontrol_rpigpio', 'senseGPIOPin'], cur_senseGPIOPin)
                 self._settings.global_set_boolean(['plugins', 'psucontrol_rpigpio', 'invertsenseGPIOPin'], cur_invertsenseGPIOPin)
                 self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'senseGPIOPinPUD'], cur_senseGPIOPinPUD)
+            else:
+                self.logger.info("No GPIO pins to convert.")
 
             # Remove now unused config option
             self._logger.info("Removing Setting: GPIOMode")
