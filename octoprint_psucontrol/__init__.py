@@ -723,7 +723,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._settings.global_set_boolean(['plugins', 'psucontrol_rpigpio', 'invertsenseGPIOPin'], cur_invertsenseGPIOPin)
                 self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'senseGPIOPinPUD'], cur_senseGPIOPinPUD)
             else:
-                self.logger.info("No GPIO pins to convert.")
+                self._logger.info("No GPIO pins to convert.")
 
             # Remove now unused config option
             self._logger.info("Removing Setting: GPIOMode")
