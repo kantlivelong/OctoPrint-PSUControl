@@ -100,13 +100,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
     def reload_settings(self):
         for k, v in self.get_settings_defaults().items():
-            if isinstance(v, str):
+            if type(v) == str:
                 v = self._settings.get([k])
-            elif isinstance(v, int):
+            elif type(v) == int:
                 v = self._settings.get_int([k])
-            elif isinstance(v, float):
+            elif type(v) == float:
                 v = self._settings.get_float([k])
-            elif isinstance(v, bool):
+            elif type(v) == bool:
                 v = self._settings.get_boolean([k])
 
             self.config[k] = v
