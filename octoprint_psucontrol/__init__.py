@@ -144,8 +144,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def cleanup_gpio(self):
-        for pin in self._configuredGPIOPins.values():
-            self._logger.debug("Cleaning up pin {}".format(pin))
+        for k, pin in self._configuredGPIOPins.items():
+            self._logger.debug("Cleaning up {} pin {}".format(k, pin.name))
             try:
                 pin.close()
             except Exception as e:
