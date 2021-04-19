@@ -14,6 +14,7 @@ import glob
 from flask import make_response, jsonify
 from flask_babel import gettext
 import periphery
+import platform
 
 try:
     from octoprint.access.permissions import Permissions
@@ -35,6 +36,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                  octoprint.plugin.WizardPlugin):
 
     def __init__(self):
+        try:
+            KERNEL_VERSION = tuple([int(s) for s in platform.release().split(".")[:2]])
+        except ValueError:
+            KERNEL_VERSION = (0, 0)
+
+        self._SUPPORTS_LINE_BIAS = KERNEL_VERSION >= (5, 5)
+
         self._sub_plugins = dict()
         self._availableGPIODevices = self.get_gpio_devs()
 
@@ -165,7 +173,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Using GPIO sensing to determine PSU on/off state.")
             self._logger.info("Configuring GPIO for pin {}".format(self.config['senseGPIOPin']))
 
-            if self.config['senseGPIOPinPUD'] == 'PULL_UP':
+
+            if self.config['senseGPIOPinPUD'] == '':
+                bias = "disable"
+            elif not self._SUPPORTS_LINE_BIAS:
+                self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default' instead.")
+                bias = "default"
+            elif self.config['senseGPIOPinPUD'] == 'PULL_UP':
                 bias = "pull_up"
             elif self.config['senseGPIOPinPUD'] == 'PULL_DOWN':
                 bias = "pull_down"
