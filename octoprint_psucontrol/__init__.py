@@ -680,17 +680,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             cur_invertsenseGPIOPin = self._settings.get_boolean(["invertsenseGPIOPin"])
             cur_senseGPIOPinPUD = self._settings.get(["senseGPIOPinPUD"])
 
-            if (cur_switchingMethod == 'GPIO' or cur_sensingMethod == 'GPIO') and cur_GPIOMode == 'BOARD':
-                # Convert BOARD pin numbers to BCM
+            if cur_switchingMethod == 'GPIO' or cur_sensingMethod == 'GPIO':
+                if cur_GPIOMode == 'BOARD':
+                    # Convert BOARD pin numbers to BCM
 
-                try:
-                    import RPi.GPIO as GPIO
-                    _has_gpio = True
-                except (ImportError, RuntimeError) as e:
-                    self._logger.error("Error importing RPi.GPIO. BOARD->BCM conversion will not occur. Error={}".format(e))
-                    _has_gpio = False
-
-                if _has_gpio:
                     def _gpio_board_to_bcm(pin):
                         _pin_to_gpio_rev1 = [-1, -1, -1, 0, -1, 1, -1, 4, 14, -1, 15, 17, 18, 21, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
                         _pin_to_gpio_rev2 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
@@ -705,12 +698,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                         return pin_to_gpio[pin]
 
-                    if cur_switchingMethod == 'GPIO':
+                    try:
+                        import RPi.GPIO as GPIO
+                        _has_gpio = True
+                    except (ImportError, RuntimeError) as e:
+                        self._logger.error("Error importing RPi.GPIO. BOARD->BCM conversion will not occur. Error={}".format(e))
+                        _has_gpio = False
+
+                    if cur_switchingMethod == 'GPIO' and _has_gpio:
                         p = _gpio_board_to_bcm(cur_onoffGPIOPin)
                         self._logger.info("Converting pin number from BOARD to BCM. onoffGPIOPin={} -> onoffGPIOPin={}".format(cur_onoffGPIOPin, p))
                         self._settings.set_int(["onoffGPIOPin"], p)
 
-                    if cur_sensingMethod == 'GPIO':
+                    if cur_sensingMethod == 'GPIO' and _has_gpio:
                         p = _gpio_board_to_bcm(cur_senseGPIOPin)
                         self._logger.info("Converting pin number from BOARD to BCM. senseGPIOPin={} -> senseGPIOPin={}".format(cur_senseGPIOPin, p))
                         self._settings.set_int(["senseGPIOPin"], p)
