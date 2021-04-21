@@ -15,15 +15,16 @@ from flask import make_response, jsonify
 from flask_babel import gettext
 import periphery
 import platform
+from octoprint.util import fqfn
 
 try:
     from octoprint.access.permissions import Permissions
-except:
+except Exception:
     from octoprint.server import user_permission
 
 try:
     from octoprint.util import ResettableTimer
-except:
+except Exception:
     from .util import ResettableTimer
 
 
@@ -148,8 +149,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.debug("Cleaning up {} pin {}".format(k, pin.name))
             try:
                 pin.close()
-            except Exception as e:
-                self._logger.error(e)
+            except Exception:
+                self._logger.exception(
+                    "Exception while cleaning up {} pin {}.".format(k, pin.name)
+                )
         self._configuredGPIOPins = {}
 
 
@@ -166,8 +169,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             try:
                 pin = periphery.GPIO(self.config['GPIODevice'], self.config['onoffGPIOPin'], initial_output)
                 self._configuredGPIOPins['switch'] = pin
-            except Exception as e:
-                self._logger.error(e)
+            except Exception:
+                self._logger.exception(
+                    "Exception while setting up GPIO pin {}".format(self.config['onoffGPIOPin'])
+                )
 
         if self.config['sensingMethod'] == 'GPIO':
             self._logger.info("Using GPIO sensing to determine PSU on/off state.")
@@ -189,8 +194,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             try:
                 pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'], direction='in', bias=bias)
                 self._configuredGPIOPins['sense'] = pin
-            except Exception as e:
-                self._logger.error(e)
+            except Exception:
+                self._logger.exception(
+                    "Exception while setting up GPIO pin {}".format(self.config['senseGPIOPin'])
+                )
 
 
     def _get_plugin_key(self, implementation):
@@ -223,8 +230,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 r = 0
                 try:
                     r = self._configuredGPIOPins['sense'].read()
-                except Exception as e:
-                    self._logger.error(e)
+                except Exception:
+                    self._logger.exception("Exception while reading GPIO line")
 
                 self._logger.debug("Result: {}".format(r))
 
@@ -255,14 +262,20 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 r = False
 
                 if p not in self._sub_plugins:
-                    self._logger.error('Plugin {} is configured for sensing it is not registered.'.format(p))
+                    self._logger.error('Plugin {} is configured for sensing but it is not registered.'.format(p))
                 elif not hasattr(self._sub_plugins[p], 'get_psu_state'):
                     self._logger.error('Plugin {} is configured for sensing but get_psu_state is not defined.'.format(p))
                 else:
+                    callback = self._sub_plugins[p].get_psu_state
                     try:
-                        r = self._sub_plugins[p].get_psu_state()
-                    except Exception as e:
-                        self._logger.error(e)
+                        r = callback()
+                    except Exception:
+                        self._logger.exception(
+                            "Error while executing callback {}".format(
+                                callback
+                            ),
+                            extra={"callback": fqfn(callback)},
+                        )
 
                 self.isPSUOn = r
             else:
@@ -442,24 +455,30 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
-                except Exception as e:
-                    self._logger.error(e)
+                except Exception :
+                    self._logger.exception("Exception while writing GPIO line")
                     return
             elif self.config['switchingMethod'] == 'PLUGIN':
                 p = self.config['switchingPlugin']
                 self._logger.debug("Switching PSU On Using PLUGIN: {}".format(p))
 
                 if p not in self._sub_plugins:
-                    self._logger.error('Plugin {} is configured for switching it is not registered.'.format(p))
+                    self._logger.error('Plugin {} is configured for switching but it is not registered.'.format(p))
                     return
                 elif not hasattr(self._sub_plugins[p], 'turn_psu_on'):
                     self._logger.error('Plugin {} is configured for switching but turn_psu_on is not defined.'.format(p))
                     return
                 else:
+                    callback = self._sub_plugins[p].turn_psu_on
                     try:
-                        r = self._sub_plugins[p].turn_psu_on()
-                    except Exception as e:
-                        self._logger.error(e)
+                        r = callback()
+                    except Exception:
+                        self._logger.exception(
+                            "Error while executing callback {}".format(
+                                callback
+                            ),
+                            extra={"callback": fqfn(callback)},
+                        )
                         return
 
             if self.config['sensingMethod'] not in ('GPIO', 'SYSTEM', 'PLUGIN'):
@@ -502,24 +521,30 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
-                except Exception as e:
-                    self._logger.error(e)
+                except Exception:
+                    self._logger.exception("Exception while writing GPIO line")
                     return
             elif self.config['switchingMethod'] == 'PLUGIN':
                 p = self.config['switchingPlugin']
                 self._logger.debug("Switching PSU Off Using PLUGIN: {}".format(p))
 
                 if p not in self._sub_plugins:
-                    self._logger.error('Plugin {} is configured for switching it is not registered.'.format(p))
+                    self._logger.error('Plugin {} is configured for switching but it is not registered.'.format(p))
                     return
                 elif not hasattr(self._sub_plugins[p], 'turn_psu_off'):
                     self._logger.error('Plugin {} is configured for switching but turn_psu_off is not defined.'.format(p))
                     return
                 else:
+                    callback = self._sub_plugins[p].turn_psu_off
                     try:
-                        r = self._sub_plugins[p].turn_psu_off()
-                    except Exception as e:
-                        self._logger.error(e)
+                        r = callback()
+                    except Exception:
+                        self._logger.exception(
+                            "Error while executing callback {}".format(
+                                callback
+                            ),
+                            extra={"callback": fqfn(callback)},
+                        )
                         return
 
             if self.config['disconnectOnPowerOff']:
@@ -701,8 +726,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     try:
                         import RPi.GPIO as GPIO
                         _has_gpio = True
-                    except (ImportError, RuntimeError) as e:
-                        self._logger.error("Error importing RPi.GPIO. BOARD->BCM conversion will not occur. Error={}".format(e))
+                    except (ImportError, RuntimeError):
+                        self._logger.exception("Error importing RPi.GPIO. BOARD->BCM conversion will not occur")
                         _has_gpio = False
 
                     if cur_switchingMethod == 'GPIO' and _has_gpio:
