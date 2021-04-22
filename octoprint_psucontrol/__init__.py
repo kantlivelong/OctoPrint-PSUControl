@@ -563,16 +563,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
     def on_event(self, event, payload):
         if event == Events.CLIENT_OPENED:
-            p = []
-            for k in list(self._sub_plugins.keys()):
-                p.append(dict(Id=k, displayName=self._plugin_manager.plugins[k].name))
-
-            d = dict(isPSUOn=self.isPSUOn,
-                     availableGPIODevices=self._availableGPIODevices,
-                     availablePlugins=p
-                )
-
-            self._plugin_manager.send_plugin_message(self._identifier, d)
+            self._plugin_manager.send_plugin_message(self._identifier, dict(isPSUOn=self.isPSUOn))
             return
 
 
@@ -767,6 +758,17 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             # Remove now unused config option
             self._logger.info("Removing Setting: GPIOMode")
             self._settings.remove(["GPIOMode"])
+
+
+    def get_template_vars(self):
+        available_plugins = []
+        for k in list(self._sub_plugins.keys()):
+            available_plugins.append(dict(pluginIdentifier=k, displayName=self._plugin_manager.plugins[k].name))
+
+        return {
+            "availableGPIODevices": self._availableGPIODevices,
+            "availablePlugins": available_plugins
+        }
 
 
     def get_template_configs(self):
