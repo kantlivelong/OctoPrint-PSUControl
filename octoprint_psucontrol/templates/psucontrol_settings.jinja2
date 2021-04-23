@@ -79,7 +79,7 @@
                 {% for item in plugin_psucontrol_availablePlugins %}
                 <option value="{{ item['pluginIdentifier'] }}">{{ item['displayName'] }}</option>
                 {% endfor %}
-            </select>
+            </select> <a href="javascript:void(0)" data-bind="click: function() { settingsViewModel.selectTab('#settings_plugin_' + settings.plugins.psucontrol.switchingPlugin()) }, visible: subPluginTabExists(settings.plugins.psucontrol.switchingPlugin())" style="display: none">Settings</a>
         </div>
     </div>
     <!-- /ko -->
@@ -150,7 +150,7 @@
                 {% for item in plugin_psucontrol_availablePlugins %}
                 <option value="{{ item['pluginIdentifier'] }}">{{ item['displayName'] }}</option>
                 {% endfor %}
-            </select>
+            </select> <a href="javascript:void(0)" data-bind="click: function() { settingsViewModel.selectTab('#settings_plugin_' + settings.plugins.psucontrol.sensingPlugin()) }, visible: subPluginTabExists(settings.plugins.psucontrol.sensingPlugin())" style="display: none">Settings</a>
         </div>
     </div>
     <!-- /ko -->
