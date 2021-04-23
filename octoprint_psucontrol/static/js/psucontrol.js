@@ -114,7 +114,11 @@ $(function() {
                 }),
                 contentType: "application/json; charset=UTF-8"
             })
-        };   
+        };
+
+        self.subPluginTabExists = function(id) {
+            return $('#settings_plugin_' + id).length > 0
+        };
     }
 
     ADDITIONAL_VIEWMODELS.push([
