@@ -278,6 +278,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                         )
 
                 self.isPSUOn = r
+            elif self.config['sensingMethod'] == 'CONNECTION':
+                new_isPSUOn = False
+                if self._printer.is_closed_or_error():
+                    new_isPSUOn = False
+                else:
+                    new_isPSUOn = True
+
+                self.isPSUOn = new_isPSUOn
             else:
                 self.isPSUOn = False
 
@@ -481,7 +489,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                         )
                         return
 
-            if self.config['sensingMethod'] not in ('GPIO', 'SYSTEM', 'PLUGIN'):
+            if self.config['sensingMethod'] not in ('GPIO', 'SYSTEM', 'PLUGIN', 'CONNECTION'):
                 self._noSensing_isPSUOn = True
 
             time.sleep(0.1 + self.config['postOnDelay'])
@@ -550,7 +558,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if self.config['disconnectOnPowerOff']:
                 self._printer.disconnect()
 
-            if self.config['sensingMethod'] not in ('GPIO', 'SYSTEM', 'PLUGIN'):
+            if self.config['sensingMethod'] not in ('GPIO', 'SYSTEM', 'PLUGIN', 'CONNECTION'):
                 self._noSensing_isPSUOn = False
 
             time.sleep(0.1)
