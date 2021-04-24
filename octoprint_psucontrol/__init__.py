@@ -16,6 +16,9 @@ from flask_babel import gettext
 import periphery
 import platform
 from octoprint.util import fqfn
+from octoprint.settings import valid_boolean_trues
+# TODO: Specific reason for _flask alias?
+import flask as _flask
 
 try:
     from octoprint.access.permissions import Permissions
@@ -91,7 +94,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             powerOffWhenIdle = False,
             idleTimeout = 30,
             idleIgnoreCommands = 'M105',
-            idleTimeoutWaitTemp = 50
+            idleTimeoutWaitTemp = 50,
+            turnOnWhenApiUploadPrint = False
         )
 
 
@@ -561,6 +565,15 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         return self.isPSUOn
 
 
+    def turn_on_before_printing_after_upload(self):
+        if ( self.config['turnOnWhenApiUploadPrint'] and
+             not self.isPSUOn and
+             _flask.request.path.startswith('/api/files/') and
+             _flask.request.method == 'POST' and
+             _flask.request.values.get('print', 'false') in valid_boolean_trues):
+                self.on_api_command("turnPSUOn", [])
+
+
     def on_event(self, event, payload):
         if event == Events.CLIENT_OPENED:
             self._plugin_manager.send_plugin_message(self._identifier, dict(isPSUOn=self.isPSUOn))
@@ -819,6 +832,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         ]
 
 
+    def _hook_octoprint_server_api_before_request(self, *args, **kwargs):
+        return [self.turn_on_before_printing_after_upload]
+
+
     def cli_commands(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
         # Requires OctoPrint >= 1.3.5
         import click
@@ -910,7 +927,8 @@ def __plugin_load__():
         "octoprint.plugin.softwareupdate.check_config": __plugin_implementation__.get_update_information,
         "octoprint.events.register_custom_events": __plugin_implementation__.register_custom_events,
         "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
-        "octoprint.cli.commands": __plugin_implementation__.cli_commands
+        "octoprint.cli.commands": __plugin_implementation__.cli_commands,
+        "octoprint.server.api.before_request": __plugin_implementation__._hook_octoprint_server_api_before_request,
     }
 
     global __plugin_helpers__
