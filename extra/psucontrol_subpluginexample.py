@@ -7,7 +7,8 @@ __copyright__ = "Copyright (C) 2021 Shawn Bruce - Released under terms of the AG
 
 import octoprint.plugin
 
-class PSUControl_SubPluginExample(octoprint.plugin.StartupPlugin):
+class PSUControl_SubPluginExample(octoprint.plugin.StartupPlugin,
+                                  octoprint.plugin.RestartNeedingPlugin):
 
     def __init__(self):
         self.status = False
