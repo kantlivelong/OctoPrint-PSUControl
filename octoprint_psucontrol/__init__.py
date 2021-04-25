@@ -17,8 +17,7 @@ import periphery
 import platform
 from octoprint.util import fqfn
 from octoprint.settings import valid_boolean_trues
-# TODO: Specific reason for _flask alias?
-import flask as _flask
+import flask
 
 try:
     from octoprint.access.permissions import Permissions
@@ -568,9 +567,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def turn_on_before_printing_after_upload(self):
         if ( self.config['turnOnWhenApiUploadPrint'] and
              not self.isPSUOn and
-             _flask.request.path.startswith('/api/files/') and
-             _flask.request.method == 'POST' and
-             _flask.request.values.get('print', 'false') in valid_boolean_trues):
+             flask.request.path.startswith('/api/files/') and
+             flask.request.method == 'POST' and
+             flask.request.values.get('print', 'false') in valid_boolean_trues):
                 self.on_api_command("turnPSUOn", [])
 
 
