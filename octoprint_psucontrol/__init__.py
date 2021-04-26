@@ -123,7 +123,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 v = self._settings.get_boolean([k])
 
             self.config[k] = v
-            self._logger.debug("{}: {}".format(k, v))
+            self._logger.debug("({}){}: {}".format(type(v), k, v))
 
         if self.config['enablePseudoOnOff'] and self.config['switchingMethod'] == 'GCODE':
             self._logger.warning("Pseudo On/Off cannot be used in conjunction with GCODE switching. Disabling.")
