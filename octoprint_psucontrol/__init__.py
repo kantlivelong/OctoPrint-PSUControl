@@ -94,7 +94,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             idleTimeout = 30,
             idleIgnoreCommands = 'M105',
             idleTimeoutWaitTemp = 50,
-            turnOnWhenApiUploadPrint = False
+            turnOnWhenApiUploadPrint = False,
+            turnOffWhenError = False
         )
 
 
@@ -576,6 +577,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def on_event(self, event, payload):
         if event == Events.CLIENT_OPENED:
             self._plugin_manager.send_plugin_message(self._identifier, dict(isPSUOn=self.isPSUOn))
+            return
+        elif event == Events.ERROR and self.config['turnOffWhenError']:
+            self._logger.info("Firmware or communication error detected. Turning PSU Off")
+            self.turn_psu_off()
             return
 
 
