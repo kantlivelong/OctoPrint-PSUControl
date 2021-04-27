@@ -161,6 +161,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def configure_gpio(self):
+        self._logger.info("Periphery version: {}".format(periphery.version))
+
         if self.config['switchingMethod'] == 'GPIO':
             self._logger.info("Using GPIO for On/Off")
             self._logger.info("Configuring GPIO for pin {}".format(self.config['onoffGPIOPin']))
