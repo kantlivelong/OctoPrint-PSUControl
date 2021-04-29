@@ -574,6 +574,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
              flask.request.method == 'POST' and
              flask.request.values.get('print', 'false') in valid_boolean_trues):
                 self.on_api_command("turnPSUOn", [])
+                time.sleep(self.config['postOnDelay'])
+                self._printer.start_print()
 
 
     def on_event(self, event, payload):
