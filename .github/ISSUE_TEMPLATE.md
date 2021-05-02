@@ -78,9 +78,3 @@ If applicable, always include if unsure.
 <!--
 On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.
 -->
-
-#### Wiring diagram
-
-<!--
-If applicable.
--->
