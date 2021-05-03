@@ -185,17 +185,17 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Configuring GPIO for pin {}".format(self.config['senseGPIOPin']))
 
 
-            if self.config['senseGPIOPinPUD'] == '':
-                bias = "disable"
-            elif not self._SUPPORTS_LINE_BIAS:
-                self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default' instead.")
+            if not self._SUPPORTS_LINE_BIAS:
+                self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default'.")
                 bias = "default"
+            elif self.config['senseGPIOPinPUD'] == '':
+                bias = "disable"
             elif self.config['senseGPIOPinPUD'] == 'PULL_UP':
                 bias = "pull_up"
             elif self.config['senseGPIOPinPUD'] == 'PULL_DOWN':
                 bias = "pull_down"
             else:
-                bias = "disable"
+                bias = "default"
 
             try:
                 pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'], direction='in', bias=bias)
