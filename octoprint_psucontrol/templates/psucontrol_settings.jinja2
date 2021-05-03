@@ -132,12 +132,17 @@
         <label class="control-label">Sensing GPIO Pin</label>
         <div class="controls">
             <input type="number" min="0" class="input-mini" data-bind="value: settings.plugins.psucontrol.senseGPIOPin">
-            <select data-bind="value: settings.plugins.psucontrol.senseGPIOPinPUD" class="input-medium">
+            <select data-bind="value: settings.plugins.psucontrol.senseGPIOPinPUD" class="input-medium" title="Bias" {% if not plugin_psucontrol_supportsLineBias %}disabled{% endif %}>
                 <option value="">Float</option>
                 <option value="PULL_UP">Pull-Up</option>
                 <option value="PULL_DOWN">Pull-Down</option>
             </select>
             <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.invertsenseGPIOPin"> Invert
+            <br/>
+
+            <!-- ko if: "{% if not plugin_psucontrol_supportsLineBias %}True{%else%}False{% endif %}" === "True" -->
+            <span class="help-inline label label-important">Linux Kernel 5.5 or greater required for input bias support. <a href="https://github.com/kantlivelong/OctoPrint-PSUControl/wiki/Troubleshooting#known-issues" target="_net">More Info</a></span>
+            <!-- /ko -->
         </div>
     </div>
     <!-- /ko -->
