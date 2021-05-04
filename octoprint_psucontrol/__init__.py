@@ -578,9 +578,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 # TODO: Is this the best solution?
                 if self.config['connectOnPowerOn']:
+                    c = 0
                     while not self._printer.is_ready():
                         # TODO: 30s is likely too long. Maybe make a hidden config option.
-                        if c <= 30:
+                        if c < 30:
                             self._logger.info("Waiting for printer to be in an operational state before proceeding...")
                             time.sleep(1)
                         else:
