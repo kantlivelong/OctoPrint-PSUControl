@@ -584,6 +584,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                         if c < 30:
                             self._logger.info("Waiting for printer to be in an operational state before proceeding...")
                             time.sleep(1)
+                            c += 1
                         else:
                             self._logger.warning("Printer not in an operational state within a timely manner.")
                             break
