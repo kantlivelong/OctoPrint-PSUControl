@@ -573,7 +573,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
              flask.request.path.startswith('/api/files/') and
              flask.request.method == 'POST' and
              flask.request.values.get('print', 'false') in valid_boolean_trues):
+                self._logger.info("Switching power on for job uploaded via API with print")
                 self.on_api_command("turnPSUOn", [])
+
+                # TODO: Is this the best solution?
+                if self.config['connectOnPowerOn']:
+                    while not self._printer.is_ready():
+                        # TODO: 30s is likely too long. Maybe make a hidden config option.
+                        if c <= 30:
+                            self._logger.info("Waiting for printer to be in an operational state before proceeding...")
+                            time.sleep(1)
+                        else:
+                            self._logger.warning("Printer not in an operational state within a timely manner.")
+                            break
 
 
     def on_event(self, event, payload):
