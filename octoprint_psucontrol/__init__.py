@@ -186,7 +186,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
             if not self._SUPPORTS_LINE_BIAS:
-                self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default'.")
+                if self.config['senseGPIOPinPUD'] != '':
+                    self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default'.")
                 bias = "default"
             elif self.config['senseGPIOPinPUD'] == '':
                 bias = "disable"
