@@ -786,7 +786,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         return {
             "availableGPIODevices": self._availableGPIODevices,
-            "availablePlugins": available_plugins
+            "availablePlugins": available_plugins,
+            "supportsLineBias": self._SUPPORTS_LINE_BIAS
         }
 
 
