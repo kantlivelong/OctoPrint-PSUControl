@@ -802,7 +802,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             "js": ["js/psucontrol.js"],
             "less": ["less/psucontrol.less"],
             "css": ["css/psucontrol.min.css"]
-
         } 
 
 
