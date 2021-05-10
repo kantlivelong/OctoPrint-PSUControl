@@ -13,12 +13,24 @@ import threading
 import glob
 from flask import make_response, jsonify
 from flask_babel import gettext
-import periphery
 import platform
 from octoprint.util import fqfn
 from octoprint.settings import valid_boolean_trues
 import flask
 from . import cli
+
+try:
+    import periphery
+    HAS_GPIO = True
+except ModuleNotFoundError:
+    HAS_GPIO = False
+
+try:
+    KERNEL_VERSION = tuple([int(s) for s in platform.release().split(".")[:2]])
+except ValueError:
+    KERNEL_VERSION = (0, 0)
+
+SUPPORTS_LINE_BIAS = KERNEL_VERSION >= (5, 5)
 
 try:
     from octoprint.access.permissions import Permissions
@@ -40,13 +52,6 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                  octoprint.plugin.WizardPlugin):
 
     def __init__(self):
-        try:
-            KERNEL_VERSION = tuple([int(s) for s in platform.release().split(".")[:2]])
-        except ValueError:
-            KERNEL_VERSION = (0, 0)
-
-        self._SUPPORTS_LINE_BIAS = KERNEL_VERSION >= (5, 5)
-
         self._sub_plugins = dict()
         self._availableGPIODevices = self.get_gpio_devs()
 
@@ -126,6 +131,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self.config[k] = v
             self._logger.debug("{}: {}".format(k, v))
 
+        if self.config['switchingMethod'] == 'GPIO' and not HAS_GPIO:
+            self._logger.error("Unable to use GPIO for switchingMethod.")
+            self.config['switchingMethod'] = ''
+
+        if self.config['sensingMethod'] == 'GPIO' and not HAS_GPIO:
+            self._logger.error("Unable to use GPIO for sensingMethod.")
+            self.config['sensingMethod'] = ''
+
         if self.config['enablePseudoOnOff'] and self.config['switchingMethod'] == 'GCODE':
             self._logger.warning("Pseudo On/Off cannot be used in conjunction with GCODE switching. Disabling.")
             self.config['enablePseudoOnOff'] = False
@@ -186,7 +199,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Configuring GPIO for pin {}".format(self.config['senseGPIOPin']))
 
 
-            if not self._SUPPORTS_LINE_BIAS:
+            if not SUPPORTS_LINE_BIAS:
                 if self.config['senseGPIOPinPUD'] != '':
                     self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default'.")
                 bias = "default"
@@ -789,7 +802,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         return {
             "availableGPIODevices": self._availableGPIODevices,
             "availablePlugins": available_plugins,
-            "supportsLineBias": self._SUPPORTS_LINE_BIAS
+            "hasGPIO": HAS_GPIO,
+            "supportsLineBias": SUPPORTS_LINE_BIAS
         }
 
 

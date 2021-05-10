@@ -30,7 +30,7 @@
             <select data-bind="value: settings.plugins.psucontrol.switchingMethod">
                 <option value="GCODE">G-Code Command</option>
                 <option value="SYSTEM">System Command</option>
-                <option value="GPIO">GPIO</option>
+                <option value="GPIO"{% if not plugin_psucontrol_hasGPIO %} disabled{% endif %}>GPIO</option>
                 <option value="PLUGIN">Plugin</option>
             </select>
         </div>
@@ -122,7 +122,7 @@
             <select data-bind="value: settings.plugins.psucontrol.sensingMethod">
                 <option value="INTERNAL">Internal</option>
                 <option value="SYSTEM">System Command</option>
-                <option value="GPIO">GPIO</option>
+                <option value="GPIO"{% if not plugin_psucontrol_hasGPIO %} disabled{% endif %}>GPIO</option>
                 <option value="PLUGIN">Plugin</option>
             </select>
         </div>
