@@ -76,9 +76,11 @@
         <label class="control-label">Switching Plugin</label>
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.switchingPlugin">
+                <option value="" disabled>Choose...</option>
                 {% for item in plugin_psucontrol_availablePlugins %}
                 <option value="{{ item['pluginIdentifier'] }}">{{ item['displayName'] }}</option>
                 {% endfor %}
+                <option value="_GET_MORE_">Get More...</option>
             </select> <a href="javascript:void(0)" data-bind="click: function() { settingsViewModel.selectTab('#settings_plugin_' + settings.plugins.psucontrol.switchingPlugin()) }, visible: subPluginTabExists(settings.plugins.psucontrol.switchingPlugin())" style="display: none">Settings</a>
         </div>
     </div>
@@ -159,9 +161,11 @@
         <label class="control-label">Sensing Plugin</label>
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.sensingPlugin">
+                <option value="" disabled>Choose...</option>
                 {% for item in plugin_psucontrol_availablePlugins %}
                 <option value="{{ item['pluginIdentifier'] }}">{{ item['displayName'] }}</option>
                 {% endfor %}
+                <option value="_GET_MORE_">Get More...</option>
             </select> <a href="javascript:void(0)" data-bind="click: function() { settingsViewModel.selectTab('#settings_plugin_' + settings.plugins.psucontrol.sensingPlugin()) }, visible: subPluginTabExists(settings.plugins.psucontrol.sensingPlugin())" style="display: none">Settings</a>
         </div>
     </div>

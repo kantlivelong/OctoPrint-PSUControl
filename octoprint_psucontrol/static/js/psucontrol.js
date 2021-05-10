@@ -6,6 +6,10 @@ $(function() {
         self.loginState = parameters[1];
         
         self.settings = undefined;
+
+        self.sensingPlugin_old = "";
+        self.switchingPlugin_old = "";
+
         self.scripts_gcode_psucontrol_post_on = ko.observable(undefined);
         self.scripts_gcode_psucontrol_pre_off = ko.observable(undefined);
 
@@ -15,6 +19,31 @@ $(function() {
 
         self.onBeforeBinding = function() {
             self.settings = self.settingsViewModel.settings;
+
+            self.settings.plugins.psucontrol.sensingPlugin.subscribe(function(oldValue) {
+                self.sensingPlugin_old = oldValue;
+            }, this, 'beforeChange');
+
+            self.settings.plugins.psucontrol.switchingPlugin.subscribe(function(oldValue) {
+                self.switchingPlugin_old = oldValue;
+            }, this, 'beforeChange');
+
+            self.settings.plugins.psucontrol.sensingPlugin.subscribe(function(newValue) {
+                if (newValue === "_GET_MORE_") {
+                    self.openGetMore();
+                    self.settings.plugins.psucontrol.sensingPlugin(self.sensingPlugin_old);
+                }
+            });
+
+            self.settings.plugins.psucontrol.switchingPlugin.subscribe(function(newValue) {
+                if (newValue === "_GET_MORE_") {
+                    self.openGetMore();
+                    self.settings.plugins.psucontrol.switchingPlugin(self.switchingPlugin_old);
+                }
+            });
+
+            self.sensingPlugin_old = self.settings.plugins.psucontrol.sensingPlugin();
+            self.switchingPlugin_old = self.settings.plugins.psucontrol.switchingPlugin();
         };
 
         self.onSettingsShown = function () {
@@ -51,7 +80,7 @@ $(function() {
                     self.psu_indicator.removeClass("on").addClass("off");
                 }   
             });
-            
+
             $.ajax({
                 url: API_BASEURL + "plugin/psucontrol",
                 type: "POST",
@@ -118,6 +147,10 @@ $(function() {
 
         self.subPluginTabExists = function(id) {
             return $('#settings_plugin_' + id).length > 0
+        };
+
+        self.openGetMore = function() {
+            window.open("https://plugins.octoprint.org/by_tag/#tag-psucontrol-subplugin", "_blank");
         };
     }
 
