@@ -76,7 +76,7 @@
         <label class="control-label">Switching Plugin</label>
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.switchingPlugin">
-                <option value="" disabled>Choose...</option>
+                <option value="" disabled selected>Choose...</option>
                 {% for item in plugin_psucontrol_availablePlugins %}
                 <option value="{{ item['pluginIdentifier'] }}">{{ item['displayName'] }}</option>
                 {% endfor %}
@@ -161,7 +161,7 @@
         <label class="control-label">Sensing Plugin</label>
         <div class="controls">
             <select data-bind="value: settings.plugins.psucontrol.sensingPlugin">
-                <option value="" disabled>Choose...</option>
+                <option value="" disabled selected>Choose...</option>
                 {% for item in plugin_psucontrol_availablePlugins %}
                 <option value="{{ item['pluginIdentifier'] }}">{{ item['displayName'] }}</option>
                 {% endfor %}
