@@ -187,7 +187,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     path=self.config['GPIODevice'],
                     line=self.config['onoffGPIOPin'],
                     direction="out",
-                    inverted=self.config['invertonoffGPIOPin']
+                    inverted=not self.config['invertonoffGPIOPin']  # TODO: this looks fishy
                 )
             except Exception:
                 self._logger.exception(
