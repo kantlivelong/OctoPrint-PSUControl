@@ -187,7 +187,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     path=self.config['GPIODevice'],
                     line=self.config['onoffGPIOPin'],
                     direction="out",
-                    inverted=not self.config['invertonoffGPIOPin']  # TODO: this looks fishy
+                    inverted=self.config['invertonoffGPIOPin']
                 )
             except Exception:
                 self._logger.exception(
@@ -219,7 +219,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     bias = "default"
 
                 try:
-                    pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'], direction='in', bias=bias)
+                    pin = periphery.CdevGPIO(
+                        path=self.config['GPIODevice'],
+                        line=self.config['senseGPIOPin'],
+                        direction='in',
+                        bias=bias,
+                        inverted=self.config['invertsenseGPIOPin']
+                    )
                     self._configuredGPIOPins['sense'] = pin
                 except Exception:
                     self._logger.exception(
@@ -254,7 +260,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.debug("Polling PSU state...")
 
             if self.config['sensingMethod'] == 'GPIO':
-                r = 0
+                r = False
                 try:
                     r = self._configuredGPIOPins['sense'].read()
                 except Exception:
@@ -262,7 +268,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 self._logger.debug("Result: {}".format(r))
 
-                new_isPSUOn = r ^ self.config['invertsenseGPIOPin']
+                new_isPSUOn = r
 
                 self.isPSUOn = new_isPSUOn
             elif self.config['sensingMethod'] == 'SYSTEM':
@@ -478,10 +484,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("On system command returned: {}".format(r))
             elif self.config['switchingMethod'] == 'GPIO':
                 self._logger.debug("Switching PSU On Using GPIO: {}".format(self.config['onoffGPIOPin']))
-                pin_output = bool(1 ^ self.config['invertonoffGPIOPin'])
-
                 try:
-                    self._configuredGPIOPins['switch'].write(pin_output)
+                    self._configuredGPIOPins['switch'].write(True)
                 except Exception :
                     self._logger.exception("Exception while writing GPIO line")
                     return
@@ -544,10 +548,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Off system command returned: {}".format(r))
             elif self.config['switchingMethod'] == 'GPIO':
                 self._logger.debug("Switching PSU Off Using GPIO: {}".format(self.config['onoffGPIOPin']))
-                pin_output = bool(0 ^ self.config['invertonoffGPIOPin'])
-
                 try:
-                    self._configuredGPIOPins['switch'].write(pin_output)
+                    self._configuredGPIOPins['switch'].write(False)
                 except Exception:
                     self._logger.exception("Exception while writing GPIO line")
                     return
