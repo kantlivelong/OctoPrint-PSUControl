@@ -166,6 +166,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         for k, pin in self._configuredGPIOPins.items():
             self._logger.debug("Cleaning up {} pin {}".format(k, pin.name))
             try:
+                # should work, even if we try to clean up the same GPIO twice
                 pin.close()
             except Exception:
                 self._logger.exception(
@@ -181,44 +182,55 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Using GPIO for On/Off")
             self._logger.info("Configuring GPIO for pin {}".format(self.config['onoffGPIOPin']))
 
-            if not self.config['invertonoffGPIOPin']:
-                initial_output = 'low'
-            else:
-                initial_output = 'high'
-
             try:
-                pin = periphery.GPIO(self.config['GPIODevice'], self.config['onoffGPIOPin'], initial_output)
-                self._configuredGPIOPins['switch'] = pin
+                pin = periphery.CdevGPIO(
+                    path=self.config['GPIODevice'],
+                    line=self.config['onoffGPIOPin'],
+                    direction="out",
+                    inverted=self.config['invertonoffGPIOPin']
+                )
             except Exception:
                 self._logger.exception(
                     "Exception while setting up GPIO pin {}".format(self.config['onoffGPIOPin'])
                 )
+            else:
+                self._configuredGPIOPins['switch'] = pin
 
         if self.config['sensingMethod'] == 'GPIO':
             self._logger.info("Using GPIO sensing to determine PSU on/off state.")
-            self._logger.info("Configuring GPIO for pin {}".format(self.config['senseGPIOPin']))
 
 
-            if not SUPPORTS_LINE_BIAS:
-                if self.config['senseGPIOPinPUD'] != '':
-                    self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default'.")
-                bias = "default"
-            elif self.config['senseGPIOPinPUD'] == '':
-                bias = "disable"
-            elif self.config['senseGPIOPinPUD'] == 'PULL_UP':
-                bias = "pull_up"
-            elif self.config['senseGPIOPinPUD'] == 'PULL_DOWN':
-                bias = "pull_down"
-            else:
-                bias = "default"
-
-            try:
-                pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'], direction='in', bias=bias)
+            if self.config['switchingMethod'] == 'GPIO' and self.config['senseGPIOPin'] == self.config['onoffGPIOPin']:
+                self._logger.info("Sensing through same pin as switching.")
                 self._configuredGPIOPins['sense'] = pin
-            except Exception:
-                self._logger.exception(
-                    "Exception while setting up GPIO pin {}".format(self.config['senseGPIOPin'])
-                )
+            else:
+                self._logger.info("Configuring GPIO for pin {}".format(self.config['senseGPIOPin']))
+                if not SUPPORTS_LINE_BIAS:
+                    if self.config['senseGPIOPinPUD'] != '':
+                        self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default'.")
+                    bias = "default"
+                elif self.config['senseGPIOPinPUD'] == '':
+                    bias = "disable"
+                elif self.config['senseGPIOPinPUD'] == 'PULL_UP':
+                    bias = "pull_up"
+                elif self.config['senseGPIOPinPUD'] == 'PULL_DOWN':
+                    bias = "pull_down"
+                else:
+                    bias = "default"
+
+                try:
+                    pin = periphery.CdevGPIO(
+                        path=self.config['GPIODevice'],
+                        line=self.config['senseGPIOPin'],
+                        direction='in',
+                        bias=bias,
+                        inverted=self.config['invertsenseGPIOPin']
+                    )
+                    self._configuredGPIOPins['sense'] = pin
+                except Exception:
+                    self._logger.exception(
+                        "Exception while setting up GPIO pin {}".format(self.config['senseGPIOPin'])
+                    )
 
 
     def _get_plugin_key(self, implementation):
@@ -248,7 +260,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.debug("Polling PSU state...")
 
             if self.config['sensingMethod'] == 'GPIO':
-                r = 0
+                r = False
                 try:
                     r = self._configuredGPIOPins['sense'].read()
                 except Exception:
@@ -256,7 +268,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 self._logger.debug("Result: {}".format(r))
 
-                new_isPSUOn = r ^ self.config['invertsenseGPIOPin']
+                new_isPSUOn = r
 
                 self.isPSUOn = new_isPSUOn
             elif self.config['sensingMethod'] == 'SYSTEM':
@@ -472,10 +484,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("On system command returned: {}".format(r))
             elif self.config['switchingMethod'] == 'GPIO':
                 self._logger.debug("Switching PSU On Using GPIO: {}".format(self.config['onoffGPIOPin']))
-                pin_output = bool(1 ^ self.config['invertonoffGPIOPin'])
-
                 try:
-                    self._configuredGPIOPins['switch'].write(pin_output)
+                    self._configuredGPIOPins['switch'].write(True)
                 except Exception :
                     self._logger.exception("Exception while writing GPIO line")
                     return
@@ -538,10 +548,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Off system command returned: {}".format(r))
             elif self.config['switchingMethod'] == 'GPIO':
                 self._logger.debug("Switching PSU Off Using GPIO: {}".format(self.config['onoffGPIOPin']))
-                pin_output = bool(0 ^ self.config['invertonoffGPIOPin'])
-
                 try:
-                    self._configuredGPIOPins['switch'].write(pin_output)
+                    self._configuredGPIOPins['switch'].write(False)
                 except Exception:
                     self._logger.exception("Exception while writing GPIO line")
                     return
