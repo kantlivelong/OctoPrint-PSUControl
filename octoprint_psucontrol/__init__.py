@@ -64,7 +64,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._idleTimer = None
         self._waitForHeaters = False
         self._skipIdleTimer = False
-        self._configuredGPIOPins: Dict[str, periphery.CdevGPIO] = {}
+        self._configuredGPIOPins = {}
         self._noSensing_isPSUOn = False
         self.isPSUOn = False
 
