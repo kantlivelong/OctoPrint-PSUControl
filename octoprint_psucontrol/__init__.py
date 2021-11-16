@@ -21,7 +21,6 @@ from . import cli
 
 try:
     import periphery
-
     HAS_GPIO = True
 except ModuleNotFoundError:
     HAS_GPIO = False
@@ -69,41 +68,43 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._noSensing_isPSUOn = False
         self.isPSUOn = False
 
+
     def get_settings_defaults(self):
         return dict(
-            GPIODevice='',
-            switchingMethod='GCODE',
-            onoffGPIOPin=0,
-            invertonoffGPIOPin=False,
-            onGCodeCommand='M80',
-            offGCodeCommand='M81',
-            onSysCommand='',
-            offSysCommand='',
-            switchingPlugin='',
-            enablePseudoOnOff=False,
-            pseudoOnGCodeCommand='M80',
-            pseudoOffGCodeCommand='M81',
-            postOnDelay=0.0,
-            connectOnPowerOn=False,
-            disconnectOnPowerOff=False,
-            sensingMethod='INTERNAL',
-            senseGPIOPin=0,
-            sensePollingInterval=5,
-            invertsenseGPIOPin=False,
-            senseGPIOPinPUD='',
-            senseSystemCommand='',
-            sensingPlugin='',
-            autoOn=False,
-            autoOnTriggerGCodeCommands="G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M106,M109,M140,M190",
-            enablePowerOffWarningDialog=True,
-            powerOffWhenIdle=False,
-            idleTimeout=30,
-            idleIgnoreCommands='M105',
-            idleTimeoutWaitTemp=50,
-            turnOnWhenApiUploadPrint=False,
-            turnOffWhenError=False,
+            GPIODevice = '',
+            switchingMethod = 'GCODE',
+            onoffGPIOPin = 0,
+            invertonoffGPIOPin = False,
+            onGCodeCommand = 'M80',
+            offGCodeCommand = 'M81',
+            onSysCommand = '',
+            offSysCommand = '',
+            switchingPlugin = '',
+            enablePseudoOnOff = False,
+            pseudoOnGCodeCommand = 'M80',
+            pseudoOffGCodeCommand = 'M81',
+            postOnDelay = 0.0,
+            connectOnPowerOn = False,
+            disconnectOnPowerOff = False,
+            sensingMethod = 'INTERNAL',
+            senseGPIOPin = 0,
+            sensePollingInterval = 5,
+            invertsenseGPIOPin = False,
+            senseGPIOPinPUD = '',
+            senseSystemCommand = '',
+            sensingPlugin = '',
+            autoOn = False,
+            autoOnTriggerGCodeCommands = "G0,G1,G2,G3,G10,G11,G28,G29,G32,M104,M106,M109,M140,M190",
+            enablePowerOffWarningDialog = True,
+            powerOffWhenIdle = False,
+            idleTimeout = 30,
+            idleIgnoreCommands = 'M105',
+            idleTimeoutWaitTemp = 50,
+            turnOnWhenApiUploadPrint = False,
+            turnOffWhenError = False,
             connectOnExternalPowerOn=False
         )
+
 
     def on_settings_initialized(self):
         scripts = self._settings.listScripts("gcode")
@@ -115,6 +116,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._settings.saveScript("gcode", "psucontrol_pre_off", u'')
 
         self.reload_settings()
+
 
     def reload_settings(self):
         for k, v in self.get_settings_defaults().items():
@@ -145,6 +147,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         self._autoOnTriggerGCodeCommandsArray = self.config['autoOnTriggerGCodeCommands'].split(',')
         self._idleIgnoreCommandsArray = self.config['idleIgnoreCommands'].split(',')
 
+
     def on_after_startup(self):
         if self.config['switchingMethod'] == 'GPIO' or self.config['sensingMethod'] == 'GPIO':
             self.configure_gpio()
@@ -155,8 +158,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self._start_idle_timer()
 
+
     def get_gpio_devs(self):
         return sorted(glob.glob('/dev/gpiochip*'))
+
 
     def cleanup_gpio(self):
         for k, pin in self._configuredGPIOPins.items():
@@ -168,6 +173,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     "Exception while cleaning up {} pin {}.".format(k, pin.name)
                 )
         self._configuredGPIOPins = {}
+
 
     def configure_gpio(self):
         self._logger.info("Periphery version: {}".format(periphery.version))
@@ -193,6 +199,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Using GPIO sensing to determine PSU on/off state.")
             self._logger.info("Configuring GPIO for pin {}".format(self.config['senseGPIOPin']))
 
+
             if not SUPPORTS_LINE_BIAS:
                 if self.config['senseGPIOPinPUD'] != '':
                     self._logger.warning("Kernel version 5.5 or greater required for GPIO bias. Using 'default'.")
@@ -207,18 +214,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 bias = "default"
 
             try:
-                pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'],
-                                         direction='in', bias=bias)
+                pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'], direction='in', bias=bias)
                 self._configuredGPIOPins['sense'] = pin
             except Exception:
                 self._logger.exception(
                     "Exception while setting up GPIO pin {}".format(self.config['senseGPIOPin'])
                 )
 
+
     def _get_plugin_key(self, implementation):
         for k, v in self._plugin_manager.plugin_implementations.items():
             if v == implementation:
                 return k
+
 
     def register_plugin(self, implementation):
         k = self._get_plugin_key(implementation)
@@ -229,8 +237,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._logger.info("Registered plugin - {}".format(k))
             self._sub_plugins[k] = implementation
 
+
     def check_psu_state(self):
         self._check_psu_state_event.set()
+
 
     def _check_psu_state(self):
         while True:
@@ -254,8 +264,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 new_isPSUOn = False
 
                 p = subprocess.Popen(self.config['senseSystemCommand'], shell=True)
-                self._logger.debug("Sensing system command executed. PID={}, Command={}".format(p.pid, self.config[
-                    'senseSystemCommand']))
+                self._logger.debug("Sensing system command executed. PID={}, Command={}".format(p.pid, self.config['senseSystemCommand']))
                 while p.poll() is None:
                     time.sleep(0.1)
                 r = p.returncode
@@ -277,8 +286,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 if p not in self._sub_plugins:
                     self._logger.error('Plugin {} is configured for sensing but it is not registered.'.format(p))
                 elif not hasattr(self._sub_plugins[p], 'get_psu_state'):
-                    self._logger.error(
-                        'Plugin {} is configured for sensing but get_psu_state is not defined.'.format(p))
+                    self._logger.error('Plugin {} is configured for sensing but get_psu_state is not defined.'.format(p))
                 else:
                     callback = self._sub_plugins[p].get_psu_state
                     try:
@@ -310,17 +318,14 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
             if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
                 self._start_idle_timer()
-                
             elif (old_isPSUOn != self.isPSUOn) and not self.isPSUOn:
                 self._stop_idle_timer()
-                
-                
-                
 
             self._plugin_manager.send_plugin_message(self._identifier, dict(isPSUOn=self.isPSUOn))
 
             self._check_psu_state_event.wait(self.config['sensePollingInterval'])
             self._check_psu_state_event.clear()
+
 
     def _start_idle_timer(self):
         self._stop_idle_timer()
@@ -329,10 +334,12 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self._idleTimer = ResettableTimer(self.config['idleTimeout'] * 60, self._idle_poweroff)
             self._idleTimer.start()
 
+
     def _stop_idle_timer(self):
         if self._idleTimer:
             self._idleTimer.cancel()
             self._idleTimer = None
+
 
     def _reset_idle_timer(self):
         try:
@@ -342,6 +349,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 raise Exception()
         except:
             self._start_idle_timer()
+
 
     def _idle_poweroff(self):
         if not self.config['powerOffWhenIdle']:
@@ -353,14 +361,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if self._printer.is_printing() or self._printer.is_paused():
             return
 
-        self._logger.info(
-            "Idle timeout reached after {} minute(s). Turning heaters off prior to shutting off PSU.".format(
-                self.config['idleTimeout']))
+        self._logger.info("Idle timeout reached after {} minute(s). Turning heaters off prior to shutting off PSU.".format(self.config['idleTimeout']))
         if self._wait_for_heaters():
             self._logger.info("Heaters below temperature.")
             self.turn_psu_off()
         else:
             self._logger.info("Aborted PSU shut down due to activity.")
+
 
     def _wait_for_heaters(self):
         self._waitForHeaters = True
@@ -420,9 +427,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._waitForHeaters = False
                 return True
 
-            self._logger.info(
-                "Waiting for heaters({}) before shutting off PSU...".format(', '.join(heaters_above_waittemp)))
+            self._logger.info("Waiting for heaters({}) before shutting off PSU...".format(', '.join(heaters_above_waittemp)))
             time.sleep(5)
+
 
     def hook_gcode_queuing(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
         skipQueuing = False
@@ -452,6 +459,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         if skipQueuing:
             return (None,)
 
+
     def turn_psu_on(self):
         if self.config['switchingMethod'] in ['GCODE', 'GPIO', 'SYSTEM', 'PLUGIN']:
             self._logger.info("Switching PSU On")
@@ -462,8 +470,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Switching PSU On Using SYSTEM: {}".format(self.config['onSysCommand']))
 
                 p = subprocess.Popen(self.config['onSysCommand'], shell=True)
-                self._logger.debug(
-                    "On system command executed. PID={}, Command={}".format(p.pid, self.config['onSysCommand']))
+                self._logger.debug("On system command executed. PID={}, Command={}".format(p.pid, self.config['onSysCommand']))
                 while p.poll() is None:
                     time.sleep(0.1)
                 r = p.returncode
@@ -475,7 +482,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 try:
                     self._configuredGPIOPins['switch'].write(pin_output)
-                except Exception:
+                except Exception :
                     self._logger.exception("Exception while writing GPIO line")
                     return
             elif self.config['switchingMethod'] == 'PLUGIN':
@@ -486,8 +493,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     self._logger.error('Plugin {} is configured for switching but it is not registered.'.format(p))
                     return
                 elif not hasattr(self._sub_plugins[p], 'turn_psu_on'):
-                    self._logger.error(
-                        'Plugin {} is configured for switching but turn_psu_on is not defined.'.format(p))
+                    self._logger.error('Plugin {} is configured for switching but turn_psu_on is not defined.'.format(p))
                     return
                 else:
                     callback = self._sub_plugins[p].turn_psu_on
@@ -516,6 +522,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             if not self._printer.is_closed_or_error():
                 self._printer.script("psucontrol_post_on", must_be_set=False)
 
+
     def turn_psu_off(self):
         if self.config['switchingMethod'] in ['GCODE', 'GPIO', 'SYSTEM', 'PLUGIN']:
             if not self._printer.is_closed_or_error():
@@ -529,8 +536,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.debug("Switching PSU Off Using SYSTEM: {}".format(self.config['offSysCommand']))
 
                 p = subprocess.Popen(self.config['offSysCommand'], shell=True)
-                self._logger.debug(
-                    "Off system command executed. PID={}, Command={}".format(p.pid, self.config['offSysCommand']))
+                self._logger.debug("Off system command executed. PID={}, Command={}".format(p.pid, self.config['offSysCommand']))
                 while p.poll() is None:
                     time.sleep(0.1)
                 r = p.returncode
@@ -553,8 +559,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     self._logger.error('Plugin {} is configured for switching but it is not registered.'.format(p))
                     return
                 elif not hasattr(self._sub_plugins[p], 'turn_psu_off'):
-                    self._logger.error(
-                        'Plugin {} is configured for switching but turn_psu_off is not defined.'.format(p))
+                    self._logger.error('Plugin {} is configured for switching but turn_psu_off is not defined.'.format(p))
                     return
                 else:
                     callback = self._sub_plugins[p].turn_psu_off
@@ -578,16 +583,19 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             time.sleep(0.1)
             self.check_psu_state()
 
+
     def get_psu_state(self):
         return self.isPSUOn
 
+
     def turn_on_before_printing_after_upload(self):
-        if (self.config['turnOnWhenApiUploadPrint'] and
-                not self.isPSUOn and
-                flask.request.path.startswith('/api/files/') and
-                flask.request.method == 'POST' and
-                flask.request.values.get('print', 'false') in valid_boolean_trues):
-            self.on_api_command("turnPSUOn", [])
+        if ( self.config['turnOnWhenApiUploadPrint'] and
+             not self.isPSUOn and
+             flask.request.path.startswith('/api/files/') and
+             flask.request.method == 'POST' and
+             flask.request.values.get('print', 'false') in valid_boolean_trues):
+                self.on_api_command("turnPSUOn", [])
+
 
     def on_event(self, event, payload):
         if event == Events.CLIENT_OPENED:
@@ -598,6 +606,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self.turn_psu_off()
             return
 
+
     def get_api_commands(self):
         return dict(
             turnPSUOn=[],
@@ -606,8 +615,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             getPSUState=[]
         )
 
+
     def on_api_get(self, request):
         return self.on_api_command("getPSUState", [])
+
 
     def on_api_command(self, command, data):
         if command in ['turnPSUOn', 'turnPSUOff', 'togglePSU']:
@@ -637,17 +648,16 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         elif command == 'getPSUState':
             return jsonify(isPSUOn=self.isPSUOn)
 
+
     def on_settings_save(self, data):
         if 'scripts_gcode_psucontrol_post_on' in data:
             script = data["scripts_gcode_psucontrol_post_on"]
-            self._settings.saveScript("gcode", "psucontrol_post_on",
-                                      u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
+            self._settings.saveScript("gcode", "psucontrol_post_on", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
             data.pop('scripts_gcode_psucontrol_post_on')
 
         if 'scripts_gcode_psucontrol_pre_off' in data:
             script = data["scripts_gcode_psucontrol_pre_off"]
-            self._settings.saveScript("gcode", "psucontrol_pre_off",
-                                      u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
+            self._settings.saveScript("gcode", "psucontrol_pre_off", u'' + script.replace("\r\n", "\n").replace("\r", "\n"))
             data.pop('scripts_gcode_psucontrol_pre_off')
 
         old_config = self.config.copy()
@@ -656,23 +666,27 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
         self.reload_settings()
 
-        # cleanup GPIO
+        #cleanup GPIO
         self.cleanup_gpio()
 
-        # configure GPIO
+        #configure GPIO
         if self.config['switchingMethod'] == 'GPIO' or self.config['sensingMethod'] == 'GPIO':
             self.configure_gpio()
 
         self._start_idle_timer()
 
+
     def get_wizard_version(self):
         return 1
+
 
     def is_wizard_required(self):
         return True
 
+
     def get_settings_version(self):
         return 4
+
 
     def on_settings_migrate(self, target, current=None):
         if current is None:
@@ -690,7 +704,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._logger.info("Migrating Setting: onCommand={0} -> onGCodeCommand={0}".format(cur_onCommand))
                 self._settings.set(["onGCodeCommand"], cur_onCommand)
                 self._settings.remove(["onCommand"])
-
+            
             cur_offCommand = self._settings.get(["offCommand"])
             if cur_offCommand is not None:
                 self._logger.info("Migrating Setting: offCommand={0} -> offGCodeCommand={0}".format(cur_offCommand))
@@ -699,8 +713,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
             cur_autoOnCommands = self._settings.get(["autoOnCommands"])
             if cur_autoOnCommands is not None:
-                self._logger.info("Migrating Setting: autoOnCommands={0} -> autoOnTriggerGCodeCommands={0}".format(
-                    cur_autoOnCommands))
+                self._logger.info("Migrating Setting: autoOnCommands={0} -> autoOnTriggerGCodeCommands={0}".format(cur_autoOnCommands))
                 self._settings.set(["autoOnTriggerGCodeCommands"], cur_autoOnCommands)
                 self._settings.remove(["autoOnCommands"])
 
@@ -728,15 +741,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     # Convert BOARD pin numbers to BCM
 
                     def _gpio_board_to_bcm(pin):
-                        _pin_to_gpio_rev1 = [-1, -1, -1, 0, -1, 1, -1, 4, 14, -1, 15, 17, 18, 21, -1, 22, 23, -1, 24,
-                                             10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                             -1, -1, -1]
-                        _pin_to_gpio_rev2 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24,
-                                             10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-                                             -1, -1, -1]
-                        _pin_to_gpio_rev3 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24,
-                                             10, -1, 9, 25, 11, 8, -1, 7, -1, -1, 5, -1, 6, 12, 13, -1, 19, 16, 26, 20,
-                                             -1, 21]
+                        _pin_to_gpio_rev1 = [-1, -1, -1, 0, -1, 1, -1, 4, 14, -1, 15, 17, 18, 21, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
+                        _pin_to_gpio_rev2 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ]
+                        _pin_to_gpio_rev3 = [-1, -1, -1, 2, -1, 3, -1, 4, 14, -1, 15, 17, 18, 27, -1, 22, 23, -1, 24, 10, -1, 9, 25, 11, 8, -1, 7, -1, -1, 5, -1, 6, 12, 13, -1, 19, 16, 26, 20, -1, 21 ]
 
                         if GPIO.RPI_REVISION == 1:
                             pin_to_gpio = _pin_to_gpio_rev1
@@ -756,29 +763,24 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                     if cur_switchingMethod == 'GPIO' and _has_gpio:
                         p = _gpio_board_to_bcm(cur_onoffGPIOPin)
-                        self._logger.info(
-                            "Converting pin number from BOARD to BCM. onoffGPIOPin={} -> onoffGPIOPin={}".format(
-                                cur_onoffGPIOPin, p))
+                        self._logger.info("Converting pin number from BOARD to BCM. onoffGPIOPin={} -> onoffGPIOPin={}".format(cur_onoffGPIOPin, p))
                         self._settings.set_int(["onoffGPIOPin"], p)
 
                     if cur_sensingMethod == 'GPIO' and _has_gpio:
                         p = _gpio_board_to_bcm(cur_senseGPIOPin)
-                        self._logger.info(
-                            "Converting pin number from BOARD to BCM. senseGPIOPin={} -> senseGPIOPin={}".format(
-                                cur_senseGPIOPin, p))
+                        self._logger.info("Converting pin number from BOARD to BCM. senseGPIOPin={} -> senseGPIOPin={}".format(cur_senseGPIOPin, p))
                         self._settings.set_int(["senseGPIOPin"], p)
 
                 if len(self._availableGPIODevices) > 0:
                     # This was likely a Raspberry Pi using RPi.GPIO. Set GPIODevice to the first dev found which is likely /dev/gpiochip0
-                    self._logger.info(
-                        "Setting GPIODevice to the first found. GPIODevice={}".format(self._availableGPIODevices[0]))
+                    self._logger.info("Setting GPIODevice to the first found. GPIODevice={}".format(self._availableGPIODevices[0]))
                     self._settings.set(["GPIODevice"], self._availableGPIODevices[0])
                 else:
                     # GPIO was used for either but no GPIO devices exist. Reset to defaults.
-                    self._logger.warning(
-                        "No GPIO devices found. Reverting switchingMethod and sensingMethod to defaults.")
+                    self._logger.warning("No GPIO devices found. Reverting switchingMethod and sensingMethod to defaults.")
                     self._settings.remove(["switchingMethod"])
                     self._settings.remove(["sensingMethod"])
+
 
                 # Write the config to psucontrol_rpigpio just in case the user decides/needs to switch to it.
                 self._logger.info("Writing original GPIO related settings to psucontrol_rpigpio.")
@@ -786,11 +788,9 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'switchingMethod'], cur_switchingMethod)
                 self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'sensingMethod'], cur_sensingMethod)
                 self._settings.global_set_int(['plugins', 'psucontrol_rpigpio', 'onoffGPIOPin'], cur_onoffGPIOPin)
-                self._settings.global_set_boolean(['plugins', 'psucontrol_rpigpio', 'invertonoffGPIOPin'],
-                                                  cur_invertonoffGPIOPin)
+                self._settings.global_set_boolean(['plugins', 'psucontrol_rpigpio', 'invertonoffGPIOPin'], cur_invertonoffGPIOPin)
                 self._settings.global_set_int(['plugins', 'psucontrol_rpigpio', 'senseGPIOPin'], cur_senseGPIOPin)
-                self._settings.global_set_boolean(['plugins', 'psucontrol_rpigpio', 'invertsenseGPIOPin'],
-                                                  cur_invertsenseGPIOPin)
+                self._settings.global_set_boolean(['plugins', 'psucontrol_rpigpio', 'invertsenseGPIOPin'], cur_invertsenseGPIOPin)
                 self._settings.global_set(['plugins', 'psucontrol_rpigpio', 'senseGPIOPinPUD'], cur_senseGPIOPinPUD)
             else:
                 self._logger.info("No GPIO pins to convert.")
@@ -798,6 +798,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             # Remove now unused config option
             self._logger.info("Removing Setting: GPIOMode")
             self._settings.remove(["GPIOMode"])
+
 
     def get_template_vars(self):
         available_plugins = []
@@ -811,17 +812,20 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             "supportsLineBias": SUPPORTS_LINE_BIAS
         }
 
+
     def get_template_configs(self):
         return [
             dict(type="settings", custom_bindings=True)
         ]
+
 
     def get_assets(self):
         return {
             "js": ["js/psucontrol.js"],
             "less": ["less/psucontrol.less"],
             "css": ["css/psucontrol.min.css"]
-        }
+        } 
+
 
     def get_update_information(self):
         return dict(
@@ -840,8 +844,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             )
         )
 
+
     def register_custom_events(self):
         return ["psu_state_changed"]
+
 
     def get_additional_permissions(self, *args, **kwargs):
         return [
@@ -853,13 +859,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                  default_groups=[Permissions.ADMIN_GROUP])
         ]
 
+
     def _hook_octoprint_server_api_before_request(self, *args, **kwargs):
         return [self.turn_on_before_printing_after_upload]
 
 
 __plugin_name__ = "PSU Control"
 __plugin_pythoncompat__ = ">=2.7,<4"
-
 
 def __plugin_load__():
     global __plugin_implementation__
@@ -877,8 +883,8 @@ def __plugin_load__():
 
     global __plugin_helpers__
     __plugin_helpers__ = dict(
-        get_psu_state=__plugin_implementation__.get_psu_state,
-        turn_psu_on=__plugin_implementation__.turn_psu_on,
-        turn_psu_off=__plugin_implementation__.turn_psu_off,
-        register_plugin=__plugin_implementation__.register_plugin
+        get_psu_state = __plugin_implementation__.get_psu_state,
+        turn_psu_on = __plugin_implementation__.turn_psu_on,
+        turn_psu_off = __plugin_implementation__.turn_psu_off,
+        register_plugin = __plugin_implementation__.register_plugin
     )
