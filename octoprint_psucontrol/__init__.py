@@ -101,7 +101,8 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             idleIgnoreCommands = 'M105',
             idleTimeoutWaitTemp = 50,
             turnOnWhenApiUploadPrint = False,
-            turnOffWhenError = False
+            turnOffWhenError = False,
+            connectOnExternalPowerOn=False
         )
 
 
@@ -309,6 +310,11 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
                 event = Events.PLUGIN_PSUCONTROL_PSU_STATE_CHANGED
                 self._event_bus.fire(event, payload=dict(isPSUOn=self.isPSUOn))
+                
+            if (old_isPSUOn != self.isPSUOn) and self.isPSUOn and self.config['connectOnExternalPowerOn'] and self._printer.is_closed_or_error():
+                time.sleep(0.1 + self.config['postOnDelay'])
+                self._printer.connect()
+                time.sleep(0.1)
 
             if (old_isPSUOn != self.isPSUOn) and self.isPSUOn:
                 self._start_idle_timer()

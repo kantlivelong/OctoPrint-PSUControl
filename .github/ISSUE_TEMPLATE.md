@@ -15,7 +15,9 @@ All support related questions will be closed.
 Feature requests should be made at:
 https://feathub.com/kantlivelong/OctoPrint-PSUControl
 
-When reporting a bug do NOT delete ANY lines from the template.
+When reporting a bug do NOT delete ANY lines from the template or exclude 
+any information unless otherwise noted.
+Failure to follow this will result in the ticket being closed and locked.
 
 Make sure any bug you want to report is still present with the CURRENT
 OctoPrint-PSUControl version.
