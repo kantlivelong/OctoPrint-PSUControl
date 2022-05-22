@@ -5,6 +5,9 @@
             <label class="checkbox">
             <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.enablePowerOffWarningDialog"> Show warning dialog when powering off via toggle button.
             </label>
+            <label class="checkbox">
+            <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.enableIdleCountdownTimer"> Show idle countdown timer in the navbar.
+            </label>
         </div>
     </div>
     <!-- ko if: settings.plugins.psucontrol.switchingMethod() === "GPIO" || settings.plugins.psucontrol.sensingMethod() === "GPIO" -->

@@ -14,6 +14,7 @@ $(function() {
         self.scripts_gcode_psucontrol_pre_off = ko.observable(undefined);
 
         self.isPSUOn = ko.observable(undefined);
+        self.idleTimeLeft = ko.observable(undefined);
 
         self.psu_indicator = $("#psucontrol_indicator");
 
@@ -101,6 +102,10 @@ $(function() {
 
             if (data.isPSUOn !== undefined) {
                 self.isPSUOn(data.isPSUOn);
+            }
+
+            if (data.idleTimeLeft !== undefined) {
+                self.idleTimeLeft(data.idleTimeLeft);
             }
         };
 
