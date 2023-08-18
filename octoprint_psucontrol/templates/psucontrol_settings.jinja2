@@ -219,6 +219,17 @@
             </label>
         </div>
     </div>
+    <!-- ko if: settings.plugins.psucontrol.connectOnPowerOn() -->
+    <div class="control-group">
+        <label class="control-label">Post Connect Delay</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" min="0" step="0.1" class="input-mini text-right" data-bind="value: settings.plugins.psucontrol.postConnectDelay">
+                <span class="add-on">sec</span>
+            </div>
+        </div>
+    </div>
+    <!-- /ko -->
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
