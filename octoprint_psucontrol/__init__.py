@@ -84,6 +84,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             pseudoOnGCodeCommand = 'M80',
             pseudoOffGCodeCommand = 'M81',
             postOnDelay = 0.0,
+            postConnectDelay = 0.0,
             connectOnPowerOn = False,
             disconnectOnPowerOff = False,
             sensingMethod = 'INTERNAL',
@@ -508,7 +509,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             time.sleep(0.1 + self.config['postOnDelay'])
 
             self.check_psu_state()
-
+            
             threading.Timer(self.config['postConnectDelay'], self.connect_printer).start()
 
     def connect_printer(self):
