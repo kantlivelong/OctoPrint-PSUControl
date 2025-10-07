@@ -187,7 +187,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 initial_output = 'high'
 
             try:
-                pin = periphery.GPIO(self.config['GPIODevice'], self.config['onoffGPIOPin'], initial_output)
+                pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['onoffGPIOPin'], direction=initial_output, label='octoprint-{}'.format(self._settings.global_get(['appearance','name'])))
                 self._configuredGPIOPins['switch'] = pin
             except Exception:
                 self._logger.exception(
@@ -213,7 +213,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                 bias = "default"
 
             try:
-                pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'], direction='in', bias=bias)
+                pin = periphery.CdevGPIO(path=self.config['GPIODevice'], line=self.config['senseGPIOPin'], direction='in', bias=bias, label='octoprint-{}'.format(self._settings.global_get(['appearance','name'])))
                 self._configuredGPIOPins['sense'] = pin
             except Exception:
                 self._logger.exception(
