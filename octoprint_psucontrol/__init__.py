@@ -108,10 +108,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
     def on_settings_initialized(self):
         scripts = self._settings.listScripts("gcode")
 
-        if not "psucontrol_post_on" in scripts:
+        if "psucontrol_post_on" not in scripts:
             self._settings.saveScript("gcode", "psucontrol_post_on", u'')
 
-        if not "psucontrol_pre_off" in scripts:
+        if "psucontrol_pre_off" not in scripts:
             self._settings.saveScript("gcode", "psucontrol_pre_off", u'')
 
         self.reload_settings()
@@ -446,7 +446,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             self.turn_psu_on()
 
         if self.config['powerOffWhenIdle'] and self.isPSUOn and not self._skipIdleTimer:
-            if not (gcode in self._idleIgnoreCommandsArray):
+            if gcode not in self._idleIgnoreCommandsArray:
                 self._waitForHeaters = False
                 self._reset_idle_timer()
 

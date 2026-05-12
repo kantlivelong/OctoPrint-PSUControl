@@ -13,7 +13,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
     from octoprint.cli.client import create_client, client_options
 
     def _api_command(command, apikey, host, port, httpuser, httppass, https, prefix):
-        if prefix == None:
+        if prefix is None:
             prefix = '/api'
 
         client = create_client(settings=cli_group.settings,
