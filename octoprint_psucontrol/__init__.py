@@ -811,6 +811,10 @@ class PSUControl(octoprint.plugin.StartupPlugin,
         }
 
 
+    def is_template_autoescaped(self):
+        return True
+
+
     def get_template_configs(self):
         return [
             dict(type="settings", custom_bindings=True)
