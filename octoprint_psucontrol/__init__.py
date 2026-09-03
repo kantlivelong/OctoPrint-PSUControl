@@ -99,7 +99,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             powerOffWhenIdle = False,
             idleTimeout = 30,
             idleIgnoreCommands = 'M105',
-            idleTimeoutWaitTemp = 50,
+            safePowerOffTemp = 50,
             turnOnWhenApiUploadPrint = False,
             turnOffWhenError = False
         )
@@ -411,13 +411,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
                     continue
 
                 self._logger.debug("Heater {} = {}C".format(heater, temp))
-                if temp > self.config['idleTimeoutWaitTemp']:
+                if temp > self.config['safePowerOffTemp']:
                     heaters_above_waittemp.append(heater)
 
                 if temp > highest_temp:
                     highest_temp = temp
 
-            if highest_temp <= self.config['idleTimeoutWaitTemp']:
+            if highest_temp <= self.config['safePowerOffTemp']:
                 self._waitForHeaters = False
                 return True
 
@@ -679,7 +679,7 @@ class PSUControl(octoprint.plugin.StartupPlugin,
 
 
     def get_settings_version(self):
-        return 4
+        return 5
 
 
     def on_settings_migrate(self, target, current=None):
@@ -792,6 +792,13 @@ class PSUControl(octoprint.plugin.StartupPlugin,
             # Remove now unused config option
             self._logger.info("Removing Setting: GPIOMode")
             self._settings.remove(["GPIOMode"])
+
+        if current < 5:
+            cur_safePowerOffTemp = self._settings.get(["idleTimeoutWaitTemp"])
+            if cur_safePowerOffTemp is not None:
+                self._logger.info("Migrating Setting: idleTimeoutWaitTemp={0} -> safePowerOffTemp={0}".format(cur_safePowerOffTemp))
+                self._settings.set(["safePowerOffTemp"], cur_safePowerOffTemp)
+                self._settings.remove(["idleTimeoutWaitTemp"])
 
 
     def get_template_vars(self):

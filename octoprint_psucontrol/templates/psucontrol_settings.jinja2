@@ -230,6 +230,15 @@
 
     <h4>Power Off Options</h4>
     <div class="control-group">
+        <label class="control-label">Safe power off temperature</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" min="0" class="input-mini text-right" data-bind="value: settings.plugins.psucontrol.safePowerOffTemp">
+                <span class="add-on">°C</span>
+            </div>
+        </div>
+    </div>    
+    <div class="control-group">
         <div class="controls">
             <label class="checkbox">
             <input type="checkbox" data-bind="checked: settings.plugins.psucontrol.powerOffWhenIdle"> Automatically turn PSU OFF when idle
@@ -250,15 +259,6 @@
         <label class="control-label">Ignore Commands</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.plugins.psucontrol.idleIgnoreCommands">
-        </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">Wait For Temperature</label>
-        <div class="controls">
-            <div class="input-append">
-                <input type="number" min="0" class="input-mini text-right" data-bind="value: settings.plugins.psucontrol.idleTimeoutWaitTemp">
-                <span class="add-on">°C</span>
-            </div>
         </div>
     </div>
     <!-- /ko -->

@@ -4,6 +4,7 @@ $(function() {
 
         self.settingsViewModel = parameters[0]
         self.loginState = parameters[1];
+        self.temperature = parameters[2];
         
         self.settings = undefined;
 
@@ -16,6 +17,34 @@ $(function() {
         self.isPSUOn = ko.observable(undefined);
 
         self.psu_indicator = $("#psucontrol_indicator");
+
+        self.hottestToolTemperature = ko.computed(function() {
+            var hottestTemperature;
+
+            if (!self.temperature || !self.temperature.tools) {
+                return undefined;
+            }
+
+            $.each(self.temperature.tools(), function(_, tool) {
+                var actualTemperature = ko.unwrap(tool.actual);
+                var toolKey = ko.unwrap(tool.key);
+
+                if ($.isNumeric(actualTemperature) && typeof toolKey === "string" && toolKey.indexOf("tool") === 0) {
+                    hottestTemperature = hottestTemperature === undefined ? Number(actualTemperature) : Math.max(hottestTemperature, Number(actualTemperature));
+                }
+            });
+
+            return hottestTemperature;
+        });
+
+        self.temperatureWarning = ko.pureComputed(function() {
+            if (!self.settings || !self.settings.plugins.psucontrol.powerOffWhenIdle()) {
+                return false;
+            }
+
+            var maxTemperature = Number(self.settings.plugins.psucontrol.safePowerOffTemp());
+            return $.isNumeric(maxTemperature) && self.hottestToolTemperature() > maxTemperature;
+        });
 
         self.onBeforeBinding = function() {
             self.settings = self.settingsViewModel.settings;
@@ -156,7 +185,7 @@ $(function() {
 
     ADDITIONAL_VIEWMODELS.push([
         PSUControlViewModel,
-        ["settingsViewModel", "loginStateViewModel"],
+        ["settingsViewModel", "loginStateViewModel", "temperatureViewModel"],
         ["#navbar_plugin_psucontrol", "#settings_plugin_psucontrol"]
     ]);
 });
