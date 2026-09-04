@@ -2,9 +2,22 @@ $(function() {
     function PSUControlViewModel(parameters) {
         var self = this;
 
+        self.doCommand = function(command) {
+            return $.ajax({
+                url: API_BASEURL + "plugin/psucontrol",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: command
+                }),
+                contentType: "application/json; charset=UTF-8"
+            });
+        };
+
         self.settingsViewModel = parameters[0]
         self.loginState = parameters[1];
-        
+        self.temperature = parameters[2];
+
         self.settings = undefined;
 
         self.sensingPlugin_old = "";
@@ -14,8 +27,70 @@ $(function() {
         self.scripts_gcode_psucontrol_pre_off = ko.observable(undefined);
 
         self.isPSUOn = ko.observable(undefined);
+        self.powerOffWhenCool = false;
+        self.cooldownSubscription = undefined;
 
         self.psu_indicator = $("#psucontrol_indicator");
+
+        self.updateIndicator = function() {
+            self.psu_indicator.toggleClass("pending", self.powerOffWhenCool);
+
+            if (self.isPSUOn()) {
+                self.psu_indicator.removeClass("off").addClass("on");
+            } else {
+                self.psu_indicator.removeClass("on").addClass("off");
+            }
+        };
+
+        self.hottestToolTemperature = ko.computed(function() {
+            var hottestTemperature;
+
+            if (!self.temperature || !self.temperature.tools) {
+                return undefined;
+            }
+
+            $.each(self.temperature.tools(), function(_, tool) {
+                var actualTemperature = ko.unwrap(tool.actual);
+                var toolKey = ko.unwrap(tool.key);
+
+                if ($.isNumeric(actualTemperature) && typeof toolKey === "string" && toolKey.indexOf("tool") === 0) {
+                    hottestTemperature = hottestTemperature === undefined ? Number(actualTemperature) : Math.max(hottestTemperature, Number(actualTemperature));
+                }
+            });
+
+            return hottestTemperature;
+        });
+
+        self.temperatureWarning = ko.pureComputed(function() {
+            if (!self.settings || !self.settings.plugins.psucontrol.powerOffWhenIdle()) {
+                return false;
+            }
+
+            var maxTemperature = Number(self.settings.plugins.psucontrol.safePowerOffTemp());
+            return $.isNumeric(maxTemperature) && self.hottestToolTemperature() > maxTemperature;
+        });
+
+        self.getTemperatureStatus = function() {
+            if (!self.settings) {
+                return "unknown";
+            }
+
+            var safeTemperature = Number(self.settings.plugins.psucontrol.safePowerOffTemp());
+            var hottestTemperature = self.hottestToolTemperature();
+            if (!$.isNumeric(safeTemperature) || !$.isNumeric(hottestTemperature)) {
+                return "unknown";
+            }
+
+            return hottestTemperature <= safeTemperature ? "safe" : "tooHigh";
+        };
+
+        self.isTemperatureSafe = function() {
+            return self.getTemperatureStatus() === "safe";
+        };
+
+        self.isTemperatureTooHigh = function() {
+            return self.getTemperatureStatus() === "tooHigh";
+        };
 
         self.onBeforeBinding = function() {
             self.settings = self.settingsViewModel.settings;
@@ -74,22 +149,13 @@ $(function() {
 
         self.onStartup = function () {
             self.isPSUOn.subscribe(function() {
-                if (self.isPSUOn()) {
-                    self.psu_indicator.removeClass("off").addClass("on");
-                } else {
-                    self.psu_indicator.removeClass("on").addClass("off");
-                }   
+                if (!self.isPSUOn()) {
+                    self.cancelPowerOffWhenCool();
+                }
+                self.updateIndicator();
             });
 
-            $.ajax({
-                url: API_BASEURL + "plugin/psucontrol",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "getPSUState"
-                }),
-                contentType: "application/json; charset=UTF-8"
-            }).done(function(data) {
+            self.doCommand("getPSUState").done(function(data) {
                 self.isPSUOn(data.isPSUOn);
             });
         }
@@ -104,45 +170,104 @@ $(function() {
             }
         };
 
-        self.togglePSU = function() {
-            if (self.isPSUOn()) {
-                if (self.settings.plugins.psucontrol.enablePowerOffWarningDialog()) {
-                    showConfirmationDialog({
-                        message: "You are about to turn off the PSU.",
-                        onproceed: function() {
-                            self.turnPSUOff();
-                        }
-                    });
-                } else {
-                    self.turnPSUOff();
+        self.cancelPowerOffWhenCool = function() {
+            if (self.cooldownSubscription) {
+                self.cooldownSubscription.dispose();
+                self.cooldownSubscription = undefined;
+            }
+
+            self.powerOffWhenCool = false;
+            self.updateIndicator();
+        };
+
+        self.startPowerOffWhenCool = function() {
+            self.powerOffWhenCool = true;
+            self.updateIndicator();
+
+            self.cooldownSubscription = self.hottestToolTemperature.subscribe(function() {
+                if (!self.powerOffWhenCool || !self.isTemperatureSafe()) {
+                    return;
                 }
-            } else {
-                self.turnPSUOn();
+
+                self.cancelPowerOffWhenCool();
+                self.doCommand("turnPSUOff");
+            });
+
+            if (self.isTemperatureSafe()) {
+                self.cancelPowerOffWhenCool();
+                self.doCommand("turnPSUOff");
             }
         };
 
-        self.turnPSUOn = function() {
-            $.ajax({
-                url: API_BASEURL + "plugin/psucontrol",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "turnPSUOn"
-                }),
-                contentType: "application/json; charset=UTF-8"
-            })
+        self.showHighTemperatureDialog = function() {
+            var dialog = showConfirmationDialog({
+                title: "PSU power off",
+                message: "The printer is too hot to safely turn off the PSU.",
+                cancel: "Cancel",
+                proceed: ["Power off anyway", "Power off when cool"],
+                proceedClass: "primary",
+                onproceed: function(index) {
+                    self.psu_indicator.trigger("focus");
+
+                    if (index === 0) {
+                        self.doCommand("turnPSUOff");
+                    } else if (index === 1) {
+                        self.startPowerOffWhenCool();
+                    }
+                },
+                oncancel: function() {
+                    self.psu_indicator.trigger("focus");
+                }
+            });
+            dialog.find(".modal-footer .btn").eq(1).removeClass("btn-primary").addClass("btn-danger");
         };
 
-    	self.turnPSUOff = function() {
-            $.ajax({
-                url: API_BASEURL + "plugin/psucontrol",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "turnPSUOff"
-                }),
-                contentType: "application/json; charset=UTF-8"
-            })
+        self.showPendingPowerOffDialog = function() {
+            showConfirmationDialog({
+                title: "PSU power off",
+                message: "The PSU will turn off when the printer is cool.",
+                cancel: "Cancel power off",
+                proceed: "Continue waiting",
+                proceedClass: "primary",
+                onproceed: function() {
+                    self.psu_indicator.trigger("focus");
+                },
+                oncancel: function() {
+                    self.psu_indicator.trigger("focus");
+                    self.cancelPowerOffWhenCool();
+                }
+            });
+        };
+
+        self.showPowerOffDialog = function() {
+            showConfirmationDialog({
+                message: "You are about to turn off the PSU.",
+                onproceed: function() {
+                    self.doCommand("turnPSUOff");
+                }
+            });
+        };
+
+        self.togglePSU = function() {
+            if (self.isPSUOn()) {
+                if (self.powerOffWhenCool) {
+                    self.showPendingPowerOffDialog();
+                    return;
+                }
+
+                if (self.isTemperatureTooHigh()) {
+                    self.showHighTemperatureDialog();
+                    return;
+                }
+
+                if (self.settings.plugins.psucontrol.enablePowerOffWarningDialog()) {
+                    self.showPowerOffDialog();
+                } else {
+                    self.doCommand("turnPSUOff");
+                }
+            } else {
+                self.doCommand("turnPSUOn");
+            }
         };
 
         self.subPluginTabExists = function(id) {
@@ -156,7 +281,7 @@ $(function() {
 
     ADDITIONAL_VIEWMODELS.push([
         PSUControlViewModel,
-        ["settingsViewModel", "loginStateViewModel"],
+        ["settingsViewModel", "loginStateViewModel", "temperatureViewModel"],
         ["#navbar_plugin_psucontrol", "#settings_plugin_psucontrol"]
     ]);
 });
